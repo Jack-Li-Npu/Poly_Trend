@@ -6,7 +6,8 @@
     "dev": "lsof -ti:3000 2>/dev/null | xargs kill -9 2>/dev/null || true; PORT=3000 next dev",
     "build": "next build",
     "start": "PORT=3000 next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "init-data": "ts-node scripts/init-categorize.ts"
   },
   "dependencies": {
     "@google/genai": "^1.35.0",
@@ -38,6 +39,7 @@
     "eslint-config-next": "^14.0.4",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }
 }

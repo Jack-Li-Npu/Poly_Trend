@@ -11,50 +11,100 @@ const CLOB_API_BASE = "https://clob.polymarket.com";
 
 /**
  * 获取所有活跃市场（用于构建标题索引）
- * 使用 public-search API，按 volume 排序
+ * 使用 markets API，按 volume24hr 排序
  */
 export async function getAllActiveMarkets(): Promise<GammaMarket[]> {
   try {
-    // public-search 不需要 query 参数即可返回所有市场
-    const response = await fetch(`${GAMMA_API_BASE}/public-search` as any);
+    const params = new URLSearchParams({
+      active: "true",
+      closed: "false",
+      limit: "1000",
+      order: "volume24hr",
+      ascending: "false",
+    });
+
+    const response = await fetch(`${GAMMA_API_BASE}/markets?${params.toString()}` as any);
 
     if (!response.ok) {
       throw new Error(`Gamma API error: ${response.status}`);
     }
 
     const data = await response.json();
-    
-    // public-search 返回 { events: [...] } 结构
-    const events: GammaEvent[] = data.events || [];
+    const markets: GammaMarket[] = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.results)
+        ? data.results
+        : [];
 
-    // 从每个Event中提取Markets，并筛选活跃且未结束的市场
-    const allMarkets: GammaMarket[] = [];
-    events.forEach((event) => {
-      if (event.markets && Array.isArray(event.markets)) {
-        const filteredMarkets = event.markets
-          .filter(
-            (market) => market.active === true && market.closed === false && market.enableOrderBook === true
-          )
-          .map((market) => ({
-            ...market,
-            eventSlug: event.slug, // 保存父 event 的 slug 用于构建正确的 URL
-          }));
-        allMarkets.push(...filteredMarkets);
-      }
-    });
+    const filteredMarkets = markets.filter(
+      (market) => market.active === true && market.closed === false && market.enableOrderBook === true
+    );
 
-    // 按 volume 倒序排序
-    allMarkets.sort((a, b) => {
+    // 按 volume 倒序排序（作为兜底）
+    filteredMarkets.sort((a, b) => {
       const volA = typeof a.volume === 'number' ? a.volume : parseFloat(String(a.volume)) || 0;
       const volB = typeof b.volume === 'number' ? b.volume : parseFloat(String(b.volume)) || 0;
       return volB - volA;
     });
 
-    console.log(`Fetched and sorted ${allMarkets.length} active markets by volume`);
+    console.log(`Fetched and sorted ${filteredMarkets.length} active markets by volume`);
 
-    return allMarkets;
+    return filteredMarkets;
   } catch (error) {
     console.error("Error fetching all active markets:", error);
+    throw error;
+  }
+}
+
+/**
+ * 获取所有活跃事件（用于语义匹配）
+ * 使用 events API，按 volume 排序，分页拉取
+ */
+export async function getAllActiveEvents(): Promise<GammaEvent[]> {
+  try {
+    const limit = 500;
+    let offset = 0;
+    const allEvents: GammaEvent[] = [];
+
+    for (let page = 0; page < 20; page++) {
+      const params = new URLSearchParams({
+        active: "true",
+        closed: "false",
+        limit: limit.toString(),
+        offset: offset.toString(),
+        sort: "volume",
+      });
+
+      const response = await fetch(`${GAMMA_API_BASE}/events?${params.toString()}` as any);
+
+      if (!response.ok) {
+        throw new Error(`Gamma API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const results: GammaEvent[] = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.results)
+          ? data.results
+          : [];
+
+      if (results.length === 0) {
+        break;
+      }
+
+      allEvents.push(...results);
+
+      if (results.length < limit) {
+        break;
+      }
+
+      offset += results.length;
+    }
+
+    console.log(`Fetched ${allEvents.length} active events`);
+    return allEvents;
+  } catch (error) {
+    console.error("Error fetching all active events:", error);
     throw error;
   }
 }
@@ -93,6 +143,8 @@ export async function searchMarkets(query: string): Promise<GammaMarket[]> {
           .map((market) => ({
             ...market,
             eventSlug: event.slug, // 保存父 event 的 slug 用于构建正确的 URL
+            eventId: event.id,     // 新增：父事件 ID
+            eventTitle: event.title // 新增：父事件标题
           }));
         allMarkets.push(...filteredMarkets);
       }
@@ -173,6 +225,8 @@ export async function getMarketsByTag(tagId: string, limit: number = 50): Promis
           .map((market) => ({
             ...market,
             eventSlug: event.slug, // 保存父 event 的 slug 用于构建正确的 URL
+            eventId: event.id,     // 新增：父事件 ID
+            eventTitle: event.title // 新增：父事件标题
           }));
         allMarkets.push(...filteredMarkets);
       }
@@ -288,6 +342,8 @@ export async function getPopularMarkets(limit: number = 20): Promise<GammaMarket
           .map((market) => ({
             ...market,
             eventSlug: event.slug, // 保存父 event 的 slug 用于构建正确的 URL
+            eventId: event.id,     // 新增：父事件 ID
+            eventTitle: event.title // 新增：父事件标题
           }));
         allMarkets.push(...filteredMarkets);
       }
@@ -355,46 +411,37 @@ export async function getBatchPrices(tokenIds: string[]): Promise<Record<string,
 }
 
 /**
- * 获取 Sparkline 图表数据
- * 获取指定 token 的价格历史数据
+ * 获取 Sparkline 图表数据 (历史价格)
+ * 使用 interval=max 和 fidelity=1440 (按天)
  */
 export async function getSparklineData(tokenId: string): Promise<SparklineDataPoint[]> {
   try {
     const params = new URLSearchParams({
-      interval: "1h",
+      interval: "max",
+      fidelity: "1440",
       market: tokenId,
     });
 
     const response = await fetch(`${CLOB_API_BASE}/prices-history?${params.toString()}` as any);
 
     if (!response.ok) {
-      throw new Error(`CLOB History API error: ${response.status}`);
+      // 某些市场可能没有历史数据
+      return [];
     }
 
-    const data = await response.json();
+    const data: any = await response.json();
     
-    // 处理可能的响应格式
-    // 如果返回数组，直接使用；如果是对象，尝试提取数据
-    if (Array.isArray(data)) {
-      return data.map((item: any) => ({
-        date: item.date || item.timestamp || new Date().toISOString(),
-        price: typeof item.price === "number" ? item.price : parseFloat(item.price) || 0,
-      }));
-    }
-    
-    // 如果返回对象，尝试提取数组字段
-    if (data.data && Array.isArray(data.data)) {
-      return data.data.map((item: any) => ({
-        date: item.date || item.timestamp || new Date().toISOString(),
-        price: typeof item.price === "number" ? item.price : parseFloat(item.price) || 0,
+    // CLOB API prices-history 返回格式: { "history": [{"t": timestamp, "p": price}, ...] }
+    if (data && data.history && Array.isArray(data.history)) {
+      return data.history.map((item: any) => ({
+        date: new Date(item.t * 1000).toISOString(),
+        price: typeof item.p === "number" ? item.p : parseFloat(item.p) || 0,
       }));
     }
 
-    // 空响应，返回空数组
     return [];
   } catch (error) {
     console.error(`Error fetching sparkline data for ${tokenId}:`, error);
-    // 优雅处理错误，返回空数组而不是抛出异常
     return [];
   }
 }

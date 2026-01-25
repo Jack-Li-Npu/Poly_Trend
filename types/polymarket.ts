@@ -36,6 +36,8 @@ export interface GammaMarket {
   enableOrderBook: boolean;
   // 添加可选的 parent event 信息
   eventSlug?: string; // 父事件的 slug，用于构建正确的 URL
+  eventId?: string; // 新增：父事件 ID
+  eventTitle?: string; // 新增：父事件标题
   outcomes?: string; // 结果选项，如 '["Yes", "No"]' 或其他自定义选项
 }
 
@@ -63,6 +65,9 @@ export interface MarketData {
   image?: string; // 可选图片
   slug: string; // 用于构建跳转链接（应该是 event slug）
   outcomes?: string[]; // 可能的结果选项，如 ["Yes", "No"]
+  clobTokenId?: string; // 新增：用于获取历史价格的 Token ID
+  eventId?: string; // 新增：所属事件 ID
+  eventTitle?: string; // 新增：所属事件标题
 }
 
 /**
@@ -94,5 +99,6 @@ export interface SearchResponse {
   suggestedQueries?: string[];
   tagsUsed?: Tag[];  // 使用的标签信息（用于标签搜索）
   tagMarketsCache?: Record<string, MarketData[]>; // 标签ID到市场列表的缓存映射
+  semanticGroups?: Array<{ dimension: string; markets: MarketData[] }>; // 语义分组结果
   directSearchTags?: Tag[]; // 直接搜索结果关联的标签
 }

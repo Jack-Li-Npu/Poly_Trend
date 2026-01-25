@@ -64,6 +64,14 @@ npm run dev
 2. API 地址通常为 `http://localhost:8000/analyze`。
 3. 深度推理可能需要 3-10 分钟。
 
+![前端页面1](https://fastly.jsdelivr.net/gh/Jack-Li-Npu/ImgStg@master/image/20260119101713052.png)
+
+
+![前端页面2](https://fastly.jsdelivr.net/gh/Jack-Li-Npu/ImgStg@master/image/20260119101858303.png)
+
+
+![推理结果](https://fastly.jsdelivr.net/gh/Jack-Låi-Npu/ImgStg@master/image/20260119102258143.png)
+
 ### 云端模型
 选择 Gemini、Claude 或 ChatGPT 时，您可以在 UI 界面中直接输入相应的 API Key，该 Key 将保存在浏览器本地。
 

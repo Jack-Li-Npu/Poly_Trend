@@ -12,7 +12,7 @@ interface MarketCache {
   lastUpdated: number;
 }
 
-const CACHE_DURATION = 1000 * 60 * 30; // 30分钟缓存
+const CACHE_DURATION = 1000 * 60 * 10; // 10分钟缓存
 let cache: MarketCache | null = null;
 
 /**
