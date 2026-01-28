@@ -56,7 +56,7 @@ const EVENT_COLORS = [
   '#f97316', // orange
 ];
 
-export function InsightGraph({ markets, relations, highCorrelationPairs }: InsightGraphProps) {
+export function InsightGraph({ markets, highCorrelationPairs }: InsightGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const animationRef = useRef<number>();
