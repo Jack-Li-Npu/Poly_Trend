@@ -105,5 +105,5 @@ export async function POST(request: NextRequest) {
 }
 
 // 配置路由段选项以增加超时时间
-export const maxDuration = 600; // 10 分钟
+export const maxDuration = 60; // Vercel Hobby 计划上限为 60 秒
 export const dynamic = 'force-dynamic';

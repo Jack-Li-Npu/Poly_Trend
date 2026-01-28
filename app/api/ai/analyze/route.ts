@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const maxDuration = 180; // 3分钟超时
+export const maxDuration = 60; // Vercel Hobby 计划上限为 60 秒
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
