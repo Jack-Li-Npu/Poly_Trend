@@ -46,7 +46,9 @@ function InsightsContent() {
             // Check if data is not too old (within 30 minutes)
             if (Date.now() - insightsData.timestamp < 30 * 60 * 1000) {
               marketsToAnalyze = insightsData.markets;
-              console.log(`♻️ Using ${marketsToAnalyze.length} pre-filtered markets from sessionStorage`);
+              if (marketsToAnalyze) {
+                console.log(`♻️ Using ${marketsToAnalyze.length} pre-filtered markets from sessionStorage`);
+              }
             } else {
               sessionStorage.removeItem(`insights-data-${query}`);
               console.log('⚠️ Insights data expired, will fetch fresh');

@@ -100,5 +100,10 @@ export interface SearchResponse {
   tagsUsed?: Tag[];  // 使用的标签信息（用于标签搜索）
   tagMarketsCache?: Record<string, MarketData[]>; // 标签ID到市场列表的缓存映射
   semanticGroups?: Array<{ dimension: string; markets: MarketData[] }>; // 语义分组结果
-  directSearchTags?: Tag[]; // 直接搜索结果关联的标签
+   directSearchTags?: Tag[]; // 直接搜索结果关联的标签
 }
+
+/**
+ * AI 模型类型
+ */
+export type AIModel = 'gemini' | 'claude' | 'chatgpt' | 'mirothinker';

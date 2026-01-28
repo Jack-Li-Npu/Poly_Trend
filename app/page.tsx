@@ -21,7 +21,8 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { searchMarkets } from "@/lib/polymarket";
-import type { MarketData, AIModel } from "@/types/polymarket";
+import type { MarketData } from "@/types/polymarket";
+import type { AIModel } from "@/components/ui/model-selector";
 import { PriceChart } from "@/components/ui/price-chart";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { AIAnalysisModal } from "@/components/ui/ai-analysis-modal";
@@ -276,7 +277,10 @@ function HomeContent() {
     }
   };
 
-  const handleModelChange = (model: AIModel, apiKey: string) => { setSelectedModel(model); setSelectedApiKey(apiKey); };
+  const handleModelChange = (model: AIModel, apiKey?: string) => { 
+    setSelectedModel(model); 
+    if (apiKey) setSelectedApiKey(apiKey); 
+  };
 
   const handleAIAnalysis = async () => {
     if (!latestSearchData) return;
