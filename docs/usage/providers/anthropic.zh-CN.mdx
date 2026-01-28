@@ -1,0 +1,104 @@
+---
+title: 在 LobeChat 中使用 Anthropic Claude
+description: 了解如何将 Anthropic Claude AI 模型集成到 LobeChat 中，实现高级对话 AI 功能。
+tags:
+  - Anthropic
+  - Claude
+  - AI 助手
+  - API 集成
+---
+
+# 在 LobeChat 中使用 Anthropic Claude
+
+<Image
+  alt="Anthropic Claude 提供商"
+  src="https://hub-apac-1.lobeobjects.space/docs/anthropic-cover.webp"
+  cover
+/>
+
+[Anthropic](https://www.anthropic.com/) 是一家专注于 AI 安全的公司，开发了 Claude 系列大型语言模型。Claude 以其有益性、无害性和诚实性而闻名，在对话、内容创作、复杂推理和编程任务方面表现出色。
+
+本指南将帮助您在 LobeChat 中配置和使用 Anthropic Claude 模型。
+
+<Callout type="info">
+  Anthropic 采用按使用量计费。请访问 [Anthropic 定价页面](https://www.anthropic.com/pricing) 查看最新价格。
+</Callout>
+
+## 步骤 1：创建 Anthropic 账户
+
+访问 [Anthropic 控制台](https://console.anthropic.com/) 并创建账户：
+
+<Image
+  alt="创建 Anthropic 账户"
+  src="https://hub-apac-1.lobeobjects.space/docs/anthropic-signup.webp"
+/>
+
+## 步骤 2：生成 API 密钥
+
+在控制台侧边栏中导航至 **API Keys**，然后点击 **Create Key**：
+
+<Image
+  alt="生成 API 密钥"
+  src="https://hub-apac-1.lobeobjects.space/docs/anthropic-api-key.webp"
+/>
+
+<Callout type="warning">
+  请妥善保管您的 API 密钥。切勿公开分享或提交到版本控制系统。
+</Callout>
+
+## 步骤 3：配置 LobeChat
+
+打开 LobeChat 设置，导航至 **语言模型** > **Anthropic**：
+
+<Image
+  alt="LobeChat Anthropic 设置"
+  src="https://hub-apac-1.lobeobjects.space/docs/anthropic-lobechat-settings.webp"
+/>
+
+在指定字段中输入您的 API 密钥。
+
+## 步骤 4：选择 Claude 模型
+
+从可用的 Claude 模型中选择：
+
+| 模型 | 描述 |
+|------|------|
+| claude-opus-4-5-20251101 | 最强大的模型，适合复杂任务 |
+| claude-sonnet-4-20250514 | 性能与速度的平衡之选 |
+| claude-3-5-haiku-20241022 | 快速且经济实惠 |
+
+<Image
+  alt="选择 Claude 模型"
+  src="https://hub-apac-1.lobeobjects.space/docs/anthropic-model-select.webp"
+/>
+
+## 步骤 5：开始对话
+
+现在您可以在 LobeChat 中使用 Claude 了：
+
+<Image
+  alt="与 Claude 对话"
+  src="https://hub-apac-1.lobeobjects.space/docs/anthropic-chat.webp"
+/>
+
+## 可用模型
+
+Anthropic 提供以下 Claude 模型：
+
+- **Claude Opus 4.5**：最新旗舰模型，具有卓越的推理和分析能力
+- **Claude Sonnet 4**：智能与速度的出色平衡
+- **Claude 3.5 Haiku**：响应速度最快的模型
+
+## 故障排除
+
+### API 密钥无效
+
+确保您的 API 密钥正确且未被撤销。如有需要，请生成新密钥。
+
+### 速率限制
+
+如果遇到速率限制，请考虑升级您的 Anthropic 计划或实施请求限流。
+
+### 模型不可用
+
+某些模型可能需要特定的账户层级。请在 Anthropic 控制台中查看可用模型。

@@ -1,0 +1,261 @@
+import { NextRequest, NextResponse } from "next/server";
+import { pickRelevantEvents } from "@/lib/gemini";
+import type { GammaMarket, MarketData } from "@/types/polymarket";
+import { getBatchPrices, parseTokenIds, formatVolume, sortAndFilterMarkets } from "@/lib/polymarket";
+import fs from 'fs';
+import path from 'path';
+
+/**
+ * 将精简格式转换为 MarketData，并获取最新概率
+ */
+async function inflateMarkets(liteMarkets: any[]): Promise<MarketData[]> {
+  if (!liteMarkets || liteMarkets.length === 0) return [];
+
+  const allTokenIds: string[] = [];
+  liteMarkets.forEach(m => {
+    const ids = parseTokenIds(m.clobTokenIds || '[]');
+    if (ids.length > 0) allTokenIds.push(ids[0]);
+  });
+
+  const prices = await getBatchPrices(allTokenIds);
+
+  return liteMarkets.map(m => {
+    const ids = parseTokenIds(m.clobTokenIds || '[]');
+    const price = ids.length > 0 ? prices[ids[0]] || 0 : 0;
+    
+    // 处理 outcomes，确保是数组
+    let outcomes = m.outcomes;
+    if (typeof outcomes === 'string') {
+      try { outcomes = JSON.parse(outcomes); } catch(e) { outcomes = ["Yes", "No"]; }
+    }
+    if (!outcomes || !Array.isArray(outcomes)) outcomes = ["Yes", "No"];
+
+    return {
+      id: m.id,
+      title: m.question || m.title,
+      outcome: outcomes[0] || "Yes",
+      probability: Math.round(price * 10000) / 100,
+      volume: typeof m.volume === 'number' ? formatVolume(m.volume) : (m.volume || "$0"),
+      chartData: [],
+      image: m.image,
+      slug: m.slug,
+      outcomes: outcomes,
+      clobTokenId: ids.length > 0 ? ids[0] : undefined,
+      eventId: m.eventId,
+      eventTitle: m.eventTitle
+    };
+  });
+}
+
+/**
+ * 转换 GammaMarket 数组为 MarketData 数组（带实时价格）
+ */
+async function convertGammaToMarketData(markets: GammaMarket[]): Promise<MarketData[]> {
+  return inflateMarkets(markets.map((m: any) => ({
+    id: m.id,
+    question: m.question,
+    clobTokenIds: m.clobTokenIds,
+    volume: m.volume,
+    image: m.image,
+    slug: m.eventSlug || m.slug,
+    outcomes: m.outcomes,
+    eventId: m.eventId,
+    eventTitle: m.eventTitle
+  })));
+}
+
+/**
+ * 保存搜索结果到本地文件
+ */
+async function saveSearchResults(query: string, markets: MarketData[]) {
+  const fs = await import('fs/promises');
+  const path = await import('path');
+  
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filename = `search-${timestamp}.json`;
+  const searchResultsDir = path.join(process.cwd(), 'search-results');
+  
+  try {
+    await fs.mkdir(searchResultsDir, { recursive: true });
+  } catch (e) {}
+  
+  const filepath = path.join(searchResultsDir, filename);
+  const data = {
+    query,
+    timestamp: new Date().toISOString(),
+    totalResults: markets.length,
+    markets,
+  };
+  
+  await fs.writeFile(filepath, JSON.stringify(data, null, 2), 'utf-8');
+  return filepath;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { query, geminiKey } = body;
+
+    if (!query || typeof query !== "string" || query.trim() === "") {
+      return NextResponse.json({ error: "Query is required" }, { status: 400 });
+    }
+
+    const searchQuery = query.trim();
+    
+    // 设置 Gemini API Key 环境
+    if (geminiKey) {
+      process.env.GEMINI_API_KEY = geminiKey;
+    }
+    console.log(`\n🚀 ========== 开始新搜索策略 (本地精选) ==========`);
+    console.log(`查询: "${searchQuery}"`);
+
+    // 1. 获取直接搜索结果
+    let directSearchMarkets: GammaMarket[] = [];
+    let directSearchTags: any[] = [];
+    try {
+      const { searchMarkets } = await import("@/lib/polymarket");
+      const { getCachedTags } = await import("@/lib/tag-cache");
+      const directResults = await searchMarkets(searchQuery);
+      directSearchMarkets = directResults.slice(0, 50);
+      
+      const allTags = await getCachedTags();
+      const searchLower = searchQuery.toLowerCase();
+      directSearchTags = allTags
+        .filter(tag => tag.label.toLowerCase().includes(searchLower) || searchLower.includes(tag.label.toLowerCase()))
+        .slice(0, 3);
+    } catch (error) {
+      console.warn("❌ 直接搜索失败:", error);
+    }
+
+    // 2. 获取相关 Tags 并缓存
+    let validTagsUsed: any[] = [];
+    let tagMarketsDataCache: Record<string, MarketData[]> = {};
+    try {
+      console.log(`\n🔍 ========== 开始原始标签搜索流程 ==========`);
+      const { getCachedTags } = await import("@/lib/tag-cache");
+      const { findRelevantTags } = await import("@/lib/gemini");
+      const { getEventsByTag } = await import("@/lib/polymarket");
+      const { filterDeadTags, markTagAsDead } = await import("@/lib/dead-tags");
+      
+      const allTags = await getCachedTags();
+      // 过滤掉本地维护的无活跃市场标签
+      const activeTagsOnly = filterDeadTags(allTags);
+      
+      console.log(`✅ 标签库加载完成，共 ${allTags.length} 个标签 (过滤后剩余 ${activeTagsOnly.length} 个)`);
+      
+      if (activeTagsOnly.length > 0) {
+        console.log(`🤖 正在调用 Gemini 匹配相关标签...`);
+        const relevantTagIndices = await findRelevantTags(searchQuery, activeTagsOnly, 15);
+        const candidateTags = relevantTagIndices.map(idx => activeTagsOnly[idx]).filter(Boolean);
+        console.log(`✅ Gemini 匹配到 ${candidateTags.length} 个候选标签: ${candidateTags.map(t => t.label).join(', ')}`);
+
+        for (const tag of candidateTags) {
+          if (validTagsUsed.length >= 8) break;
+          console.log(`🔄 正在拉取标签 "${tag.label}" (${tag.id}) 的市场...`);
+          const events = await getEventsByTag(tag.id, 50);
+          const markets: GammaMarket[] = [];
+          events.forEach(event => {
+            if (event.markets && Array.isArray(event.markets)) {
+              markets.push(...event.markets.filter(m => m.active && !m.closed && m.enableOrderBook).map(m => ({ ...m, eventSlug: event.slug })));
+            }
+          });
+
+          if (markets.length > 0) {
+            tagMarketsDataCache[tag.id] = await convertGammaToMarketData(markets.slice(0, 30));
+            validTagsUsed.push(tag);
+            console.log(`   ✅ 标签 "${tag.label}" 有效，包含 ${tagMarketsDataCache[tag.id].length} 个市场`);
+          } else {
+            console.log(`   ⚠️ 标签 "${tag.label}" 下无活跃市场，标记为不活跃并跳过`);
+            markTagAsDead(tag.id);
+          }
+        }
+      } else {
+        console.warn("⚠️ 警告: 标签库为空或无有效标签，无法进行标签匹配");
+      }
+      console.log(`✅ 原始标签搜索完成，最终采用 ${validTagsUsed.length} 个标签`);
+      console.log(`==========================================\n`);
+    } catch (error) {
+      console.warn("❌ 标签搜索失败:", error);
+    }
+
+    // 3. 转换直接搜索结果
+    const marketData = await convertGammaToMarketData(directSearchMarkets);
+
+    // 4. 执行本地语义精选（三大类）
+    let semanticGroupsData: Array<{ dimension: string; markets: MarketData[] }> = [];
+    let semanticMatchMarkets: MarketData[] = [];
+    try {
+      console.log(`🧠 执行本地语义精选...`);
+      const dataPath = path.join(process.cwd(), 'data', 'categorized-events.json');
+      if (fs.existsSync(dataPath)) {
+        const allCategorized: any[] = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+        const categories = ["经济", "政治", "技术"];
+        
+        const picksPromises = categories.map(async (cat) => {
+          const pool = allCategorized.filter(e => e.category === cat);
+          console.log(`   - 正在为维度 [${cat}] 筛选市场 (池大小: ${pool.length})...`);
+          
+          if (pool.length === 0) return { dimension: cat, markets: [] };
+          
+          const relevantIds = await pickRelevantEvents(searchQuery, pool, 30, cat);
+          console.log(`   - 维度 [${cat}] 匹配到 ${relevantIds.length} 个相关事件`);
+          
+          const pickedEvents = pool.filter(e => relevantIds.includes(e.id));
+          const markets = await inflateMarkets(pickedEvents.map(e => e.topMarket));
+          
+          return { dimension: cat, markets };
+        });
+        
+        semanticGroupsData = await Promise.all(picksPromises);
+        semanticMatchMarkets = semanticGroupsData.flatMap(g => g.markets);
+        
+        // 重新构建有效标签列表，确保顺序：Smart Search -> Semantic Match -> 三大精选 -> 原始标签
+        const smartSearchTag = { id: 'smart-search', label: '智能搜索' };
+        const semanticMatchTag = { id: 'semantic-match', label: '语义总览' };
+        const pickTags = categories.map(cat => ({ id: `semantic-${cat}`, label: `${cat}` }));
+        
+        // 原始标签（Step 2 中找到的）
+        const originalTags = validTagsUsed;
+        
+        validTagsUsed = [
+          smartSearchTag,
+          semanticMatchTag,
+          ...pickTags,
+          ...originalTags
+        ];
+        
+        // 缓存语义匹配总览 + 分类结果
+        tagMarketsDataCache['smart-search'] = marketData;
+        tagMarketsDataCache['semantic-match'] = semanticMatchMarkets;
+        semanticGroupsData.forEach(g => {
+          tagMarketsDataCache[`semantic-${g.dimension}`] = g.markets;
+        });
+      }
+    } catch (error) {
+      console.warn("❌ 本地语义筛选失败:", error);
+    }
+
+    // 构建全量相关数据供 AI 分析
+    const allUniqueMarketsMap = new Map<string, MarketData>();
+    marketData.forEach(m => allUniqueMarketsMap.set(m.id, m));
+    semanticGroupsData.forEach(g => g.markets.forEach(m => allUniqueMarketsMap.set(m.id, m)));
+    Object.values(tagMarketsDataCache).forEach(markets => markets.forEach(m => allUniqueMarketsMap.set(m.id, m)));
+    const allRelevantMarkets = Array.from(allUniqueMarketsMap.values());
+
+    return NextResponse.json({
+      markets: marketData,
+      allRelevantMarkets,
+      source: 'hybrid',
+      message: `找到 ${marketData.length} 个直接相关市场，以及多维精选分类`,
+      suggestedQueries: validTagsUsed.map(t => t.label).slice(0, 3),
+      tagsUsed: validTagsUsed,
+      tagMarketsCache: tagMarketsDataCache,
+      semanticGroups: semanticGroupsData,
+      directSearchTags: directSearchTags.length > 0 ? directSearchTags : undefined,
+    });
+
+  } catch (error) {
+    console.error("AI search API error:", error);
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Internal Server Error" }, { status: 500 });
+  }
+}

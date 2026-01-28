@@ -1,0 +1,104 @@
+---
+title: Using Anthropic Claude in LobeChat
+description: Learn how to integrate Anthropic Claude AI models into LobeChat for advanced conversational AI capabilities.
+tags:
+  - Anthropic
+  - Claude
+  - AI Assistant
+  - API Integration
+---
+
+# Using Anthropic Claude in LobeChat
+
+<Image
+  alt="Anthropic Claude Provider"
+  src="https://hub-apac-1.lobeobjects.space/docs/anthropic-cover.webp"
+  cover
+/>
+
+[Anthropic](https://www.anthropic.com/) is an AI safety company that develops Claude, a family of large language models known for their helpfulness, harmlessness, and honesty. Claude excels at thoughtful dialogue, content creation, complex reasoning, and coding tasks.
+
+This guide will help you configure and use Anthropic Claude models in LobeChat.
+
+<Callout type="info">
+  Anthropic offers usage-based pricing. Check the latest pricing at [Anthropic Pricing](https://www.anthropic.com/pricing).
+</Callout>
+
+## Step 1: Create an Anthropic Account
+
+Visit [Anthropic Console](https://console.anthropic.com/) and create an account:
+
+<Image
+  alt="Create Anthropic Account"
+  src="https://hub-apac-1.lobeobjects.space/docs/anthropic-signup.webp"
+/>
+
+## Step 2: Generate an API Key
+
+Navigate to **API Keys** in the console sidebar and click **Create Key**:
+
+<Image
+  alt="Generate API Key"
+  src="https://hub-apac-1.lobeobjects.space/docs/anthropic-api-key.webp"
+/>
+
+<Callout type="warning">
+  Store your API key securely. Never share it publicly or commit it to version control.
+</Callout>
+
+## Step 3: Configure LobeChat
+
+Open LobeChat settings and navigate to **Language Model** > **Anthropic**:
+
+<Image
+  alt="LobeChat Anthropic Settings"
+  src="https://hub-apac-1.lobeobjects.space/docs/anthropic-lobechat-settings.webp"
+/>
+
+Enter your API key in the designated field.
+
+## Step 4: Select a Claude Model
+
+Choose from available Claude models:
+
+| Model | Description |
+|-------|-------------|
+| claude-opus-4-5-20251101 | Most capable model for complex tasks |
+| claude-sonnet-4-20250514 | Balanced performance and speed |
+| claude-3-5-haiku-20241022 | Fast and cost-effective |
+
+<Image
+  alt="Select Claude Model"
+  src="https://hub-apac-1.lobeobjects.space/docs/anthropic-model-select.webp"
+/>
+
+## Step 5: Start Chatting
+
+You're now ready to use Claude in LobeChat:
+
+<Image
+  alt="Chat with Claude"
+  src="https://hub-apac-1.lobeobjects.space/docs/anthropic-chat.webp"
+/>
+
+## Available Models
+
+Anthropic provides the following Claude models:
+
+- **Claude Opus 4.5**: Latest flagship model with superior reasoning and analysis
+- **Claude Sonnet 4**: Excellent balance of intelligence and speed
+- **Claude 3.5 Haiku**: Fastest model for quick responses
+
+## Troubleshooting
+
+### API Key Invalid
+
+Ensure your API key is correct and has not been revoked. Generate a new key if needed.
+
+### Rate Limiting
+
+If you encounter rate limits, consider upgrading your Anthropic plan or implementing request throttling.
+
+### Model Not Available
+
+Some models may require specific account tiers. Check your Anthropic console for available models.

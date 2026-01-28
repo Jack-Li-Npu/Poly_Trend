@@ -1,0 +1,92 @@
+---
+title: Model Provider Environment Variables
+description: Configuration guide for AI model provider environment variables.
+---
+
+# Model Provider Environment Variables
+
+This document describes the environment variables for configuring AI model providers.
+
+## Anthropic
+
+### `ANTHROPIC_API_KEY`
+
+- **Type:** Required
+- **Description:** Your API key obtained from the Anthropic Console. This is required to authenticate requests to Claude models.
+- **Example:** `sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+
+### `ANTHROPIC_MODEL_LIST`
+
+- **Type:** Optional
+- **Description:** Control which Claude models are available in the model selection. Use `+` prefix to add a model, `-` prefix to hide a model. Use `-all` to hide all default models before adding specific ones.
+- **Default:** All available Claude models
+- **Example:** `-all,+claude-opus-4-5-20251101,+claude-sonnet-4-20250514=Claude Sonnet 4`
+
+### `ANTHROPIC_PROXY_URL`
+
+- **Type:** Optional
+- **Description:** Custom proxy URL for Anthropic API requests. Useful for routing through a proxy server or using a compatible API endpoint.
+- **Default:** `https://api.anthropic.com`
+- **Example:** `https://my-proxy.example.com/anthropic`
+
+## Google (Gemini)
+
+### `GEMINI_API_KEY`
+
+- **Type:** Required
+- **Description:** Your API key obtained from Google AI Studio. Required for accessing Gemini models.
+- **Example:** `AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+
+### `GEMINI_MODEL_LIST`
+
+- **Type:** Optional
+- **Description:** Control which Gemini models are available in the model selection.
+- **Default:** All available Gemini models
+- **Example:** `-all,+gemini-2.0-flash,+gemini-1.5-pro`
+
+## OpenAI
+
+### `OPENAI_API_KEY`
+
+- **Type:** Required
+- **Description:** Your API key obtained from the OpenAI Platform dashboard.
+- **Example:** `sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+
+### `OPENAI_MODEL_LIST`
+
+- **Type:** Optional
+- **Description:** Control which OpenAI models are available.
+- **Default:** All available GPT models
+- **Example:** `-all,+gpt-4o,+gpt-4o-mini`
+
+### `OPENAI_PROXY_URL`
+
+- **Type:** Optional
+- **Description:** Custom proxy URL for OpenAI API requests.
+- **Default:** `https://api.openai.com/v1`
+- **Example:** `https://my-proxy.example.com/openai/v1`
+
+## Model List Configuration
+
+The `*_MODEL_LIST` variables support the following syntax:
+
+| Syntax | Description |
+|--------|-------------|
+| `model-id` | Add a model with its default name |
+| `+model-id` | Explicitly add a model |
+| `-model-id` | Hide a specific model |
+| `-all` | Hide all default models |
+| `model-id=Display Name` | Add a model with a custom display name |
+
+### Examples
+
+```bash
+# Show only specific models
+ANTHROPIC_MODEL_LIST="-all,+claude-opus-4-5-20251101,+claude-sonnet-4-20250514"
+
+# Hide a specific model
+ANTHROPIC_MODEL_LIST="-claude-3-5-haiku-20241022"
+
+# Add custom display names
+ANTHROPIC_MODEL_LIST="+claude-opus-4-5-20251101=Claude Opus 4.5 (Latest)"
+```
