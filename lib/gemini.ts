@@ -289,7 +289,7 @@ export async function embedText(text: string): Promise<number[]> {
     const options = {
       hostname: 'generativelanguage.googleapis.com',
       port: 443,
-      path: `/v1beta/models/text-embedding-004:embedContent?key=${process.env.process.env.GEMINI_API_KEY}`,
+      path: `/v1beta/models/text-embedding-004:embedContent?key=${process.env.GEMINI_API_KEY}`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -551,7 +551,7 @@ ${titles.join("\n")}`;
 }
 
 /**
- * 使用 AI 推断市场对之间的因果逻辑关系
+ * 使用 AI 推断 market 对之间的因果逻辑关系
  */
 export async function inferCausalRelations(
   userQuery: string,
