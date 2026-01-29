@@ -9,7 +9,7 @@ import https from 'https';
  * 直接调用 Gemini API（使用 https 模块以支持代理）
  */
 async function callGeminiAPI(prompt: string): Promise<string> {
-  const currentKey = process.env.process.env.GEMINI_API_KEY;
+  const currentKey = process.env.GEMINI_API_KEY;
   
   if (!currentKey) {
     throw new Error("Gemini API key is not configured. Please set it in the UI.");
@@ -84,7 +84,7 @@ export async function findRelevantTags(
   tags: Array<{ label: string; slug?: string }>,
   topN: number = 5
 ): Promise<number[]> {
-  if (!process.env.process.env.GEMINI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     throw new Error("Gemini API key is not configured");
   }
 
@@ -152,7 +152,7 @@ export async function findRelevantEvents(
   eventTitles: string[],
   topN: number = 20
 ): Promise<number[]> {
-  if (!process.env.process.env.GEMINI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     throw new Error("Gemini API key is not configured");
   }
 
@@ -215,7 +215,7 @@ export async function findRelevantMarkets(
   userQuery: string,
   marketTitles: string[]
 ): Promise<number[]> {
-  if (!process.env.process.env.GEMINI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     throw new Error("Gemini API key is not configured");
   }
 
@@ -274,7 +274,7 @@ ${titlesToAnalyze.map((title, index) => `${index}: ${title}`).join("\n")}
  * 为单个文本生成 Embedding
  */
 export async function embedText(text: string): Promise<number[]> {
-  if (!process.env.process.env.GEMINI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     throw new Error("Gemini API key is not configured");
   }
 
@@ -325,7 +325,7 @@ export async function embedText(text: string): Promise<number[]> {
  * 批量为多个文本生成 Embedding
  */
 export async function batchEmbedText(texts: string[]): Promise<number[][]> {
-  if (!process.env.process.env.GEMINI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     throw new Error("Gemini API key is not configured");
   }
 
