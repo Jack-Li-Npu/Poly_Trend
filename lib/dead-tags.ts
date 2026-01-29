@@ -9,12 +9,7 @@ const DEAD_TAGS_FILE = path.join(process.cwd(), 'data', 'dead-tags.json');
 export function getDeadTags(): string[] {
   try {
     if (!fs.existsSync(DEAD_TAGS_FILE)) {
-      // 确保目录存在
-      const dir = path.dirname(DEAD_TAGS_FILE);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-      fs.writeFileSync(DEAD_TAGS_FILE, JSON.stringify([], null, 2));
+      // Vercel 环境下不尝试创建文件
       return [];
     }
     const content = fs.readFileSync(DEAD_TAGS_FILE, 'utf-8');
@@ -33,8 +28,19 @@ export function markTagAsDead(tagId: string): void {
     const deadTags = getDeadTags();
     if (!deadTags.includes(tagId)) {
       deadTags.push(tagId);
-      fs.writeFileSync(DEAD_TAGS_FILE, JSON.stringify(deadTags, null, 2));
-      console.log(`💀 Tag ${tagId} marked as dead (no active markets)`);
+      
+      // Vercel 环境下文件系统是只读的，除了 /tmp
+      // 我们尝试写入，但如果失败（如 EROFS）则优雅跳过
+      try {
+        fs.writeFileSync(DEAD_TAGS_FILE, JSON.stringify(deadTags, null, 2));
+        console.log(`💀 Tag ${tagId} marked as dead (no active markets)`);
+      } catch (writeError: any) {
+        if (writeError.code === 'EROFS') {
+          console.warn(`⚠️ Cannot write to filesystem on Vercel (EROFS). Tag ${tagId} marked as dead in-memory only.`);
+        } else {
+          throw writeError;
+        }
+      }
     }
   } catch (error) {
     console.error("Failed to mark tag as dead:", error);

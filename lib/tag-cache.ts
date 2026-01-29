@@ -75,8 +75,17 @@ async function saveTagsToFile(tags: PolymarketTag[]): Promise<void> {
       tags: tags,
     };
     
-    await fs.writeFile(filepath, JSON.stringify(data, null, 2), 'utf-8');
-    console.log(`✅ Tags saved to: ${filepath}`);
+    // Vercel 环境下文件系统是只读的
+    try {
+      await fs.writeFile(filepath, JSON.stringify(data, null, 2), 'utf-8');
+      console.log(`✅ Tags saved to: ${filepath}`);
+    } catch (writeError: any) {
+      if (writeError.code === 'EROFS') {
+        console.warn(`⚠️ Cannot save tags to filesystem on Vercel (EROFS). Tags cached in-memory only.`);
+      } else {
+        throw writeError;
+      }
+    }
   } catch (error) {
     console.error("Failed to save tags to file:", error);
   }

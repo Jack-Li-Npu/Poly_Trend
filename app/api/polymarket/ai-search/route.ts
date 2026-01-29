@@ -88,8 +88,16 @@ async function saveSearchResults(query: string, markets: MarketData[]) {
     markets,
   };
   
-  await fs.writeFile(filepath, JSON.stringify(data, null, 2), 'utf-8');
-  return filepath;
+  try {
+    await fs.writeFile(filepath, JSON.stringify(data, null, 2), 'utf-8');
+    return filepath;
+  } catch (error: any) {
+    if (error.code === 'EROFS') {
+      console.warn(`⚠️ Cannot save search results to filesystem on Vercel (EROFS). Skipping file save.`);
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -100,6 +108,8 @@ export async function POST(request: NextRequest) {
     if (!query || typeof query !== "string" || query.trim() === "") {
       return NextResponse.json({ error: "Query is required" }, { status: 400 });
     }
+
+    console.log(`[AI-SEARCH] Received geminiKey: ${geminiKey ? 'Present (Starts with ' + geminiKey.substring(0, 4) + '...)' : 'MISSING'}`);
 
     const searchQuery = query.trim();
     

@@ -5,17 +5,11 @@
 
 import https from 'https';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
-if (!GEMINI_API_KEY) {
-  console.warn("GEMINI_API_KEY is not set. Gemini AI features will not work.");
-}
-
 /**
  * 直接调用 Gemini API（使用 https 模块以支持代理）
  */
 async function callGeminiAPI(prompt: string): Promise<string> {
-  const currentKey = process.env.GEMINI_API_KEY;
+  const currentKey = process.env.process.env.GEMINI_API_KEY;
   
   if (!currentKey) {
     throw new Error("Gemini API key is not configured. Please set it in the UI.");
@@ -90,7 +84,7 @@ export async function findRelevantTags(
   tags: Array<{ label: string; slug?: string }>,
   topN: number = 5
 ): Promise<number[]> {
-  if (!GEMINI_API_KEY) {
+  if (!process.env.process.env.GEMINI_API_KEY) {
     throw new Error("Gemini API key is not configured");
   }
 
@@ -158,7 +152,7 @@ export async function findRelevantEvents(
   eventTitles: string[],
   topN: number = 20
 ): Promise<number[]> {
-  if (!GEMINI_API_KEY) {
+  if (!process.env.process.env.GEMINI_API_KEY) {
     throw new Error("Gemini API key is not configured");
   }
 
@@ -221,7 +215,7 @@ export async function findRelevantMarkets(
   userQuery: string,
   marketTitles: string[]
 ): Promise<number[]> {
-  if (!GEMINI_API_KEY) {
+  if (!process.env.process.env.GEMINI_API_KEY) {
     throw new Error("Gemini API key is not configured");
   }
 
@@ -280,7 +274,7 @@ ${titlesToAnalyze.map((title, index) => `${index}: ${title}`).join("\n")}
  * 为单个文本生成 Embedding
  */
 export async function embedText(text: string): Promise<number[]> {
-  if (!GEMINI_API_KEY) {
+  if (!process.env.process.env.GEMINI_API_KEY) {
     throw new Error("Gemini API key is not configured");
   }
 
@@ -295,7 +289,7 @@ export async function embedText(text: string): Promise<number[]> {
     const options = {
       hostname: 'generativelanguage.googleapis.com',
       port: 443,
-      path: `/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`,
+      path: `/v1beta/models/text-embedding-004:embedContent?key=${process.env.process.env.GEMINI_API_KEY}`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -331,7 +325,7 @@ export async function embedText(text: string): Promise<number[]> {
  * 批量为多个文本生成 Embedding
  */
 export async function batchEmbedText(texts: string[]): Promise<number[][]> {
-  if (!GEMINI_API_KEY) {
+  if (!process.env.process.env.GEMINI_API_KEY) {
     throw new Error("Gemini API key is not configured");
   }
 
@@ -354,7 +348,7 @@ export async function batchEmbedText(texts: string[]): Promise<number[][]> {
       const options = {
         hostname: 'generativelanguage.googleapis.com',
         port: 443,
-        path: `/v1beta/models/text-embedding-004:batchEmbedContents?key=${GEMINI_API_KEY}`,
+        path: `/v1beta/models/text-embedding-004:batchEmbedContents?key=${process.env.GEMINI_API_KEY}`,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -424,7 +418,7 @@ export async function findMarketGroups(
   groupCount: number = 5,
   total: number = 50
 ): Promise<MarketGroupResult[]> {
-  if (!GEMINI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     throw new Error("Gemini API key is not configured");
   }
 
@@ -501,7 +495,7 @@ export async function pickRelevantEvents(
   count: number = 30,
   dimension?: string
 ): Promise<Array<{ id: string; reasoning: string }>> {
-  if (!GEMINI_API_KEY) throw new Error("Gemini API key is not configured");
+  if (!process.env.GEMINI_API_KEY) throw new Error("Gemini API key is not configured");
   if (eventPool.length === 0) return [];
 
   const titles = eventPool.map((e, idx) => `${idx}: ${e.title}`);
@@ -568,7 +562,7 @@ export async function inferCausalRelations(
     relationType?: 'intra-event' | 'inter-event'
   }>
 ): Promise<Array<{ cause: string; effect: string; confidence: number; reason: string }>> {
-  if (!GEMINI_API_KEY) throw new Error("Gemini API key is not configured");
+  if (!process.env.GEMINI_API_KEY) throw new Error("Gemini API key is not configured");
   if (pairs.length === 0) return [];
 
   const pairsText = pairs.map((p, i) => `
@@ -635,7 +629,7 @@ export async function classifyEventsByCategory(
   categories: string[],
   batchSize: number = 200
 ): Promise<EventCategoryAssignment[]> {
-  if (!GEMINI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     throw new Error("Gemini API key is not configured");
   }
 
