@@ -69,9 +69,9 @@ export function AIAnalysisModal({
                   <Brain className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold">AI 深度分析</h2>
+                  <h2 className="text-2xl font-bold">AI 深度分析报告</h2>
                   <p className="text-white/80 text-sm mt-1">
-                    MiroFlow Agent 综合分析结果
+                    基于 Gemini AI 的市场深度洞察
                   </p>
                 </div>
               </div>
@@ -101,21 +101,21 @@ export function AIAnalysisModal({
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                     className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full"
                   />
-                  <p className="mt-4 text-gray-600 dark:text-gray-400 text-center">
-                    AI 正在深度分析市场数据和情绪...
+                  <p className="mt-4 text-gray-600 dark:text-gray-400 text-center font-bold">
+                    Gemini 正在深度分析市场数据和情绪...
                   </p>
-                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-500 text-center">
-                    正在调用 MiroFlow Agent，这可能需要 3-10 分钟
+                  <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-500 text-center">
+                    正在整合多维数据并生成专业报告，请稍候
                   </p>
                   <div className="mt-6 w-full max-w-md bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
                     <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                      分析进度：
+                      分析任务：
                     </p>
                     <ul className="text-xs text-gray-500 dark:text-gray-500 space-y-1">
-                      <li>✓ 接收市场数据</li>
-                      <li>⏳ 查询 Nansen 链上指标</li>
-                      <li>⏳ 搜索最新市场新闻</li>
-                      <li>⏳ 综合分析和生成报告</li>
+                      <li>✓ 提取预测市场核心指标</li>
+                      <li>⏳ 分析历史价格波动趋势</li>
+                      <li>⏳ 评估市场情绪与置信度</li>
+                      <li>⏳ 生成专业投资参考策略</li>
                     </ul>
                   </div>
                   <p className="mt-4 text-xs text-gray-400 dark:text-gray-600 text-center">

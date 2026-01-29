@@ -68,6 +68,7 @@ export interface MarketData {
   clobTokenId?: string; // 新增：用于获取历史价格的 Token ID
   eventId?: string; // 新增：所属事件 ID
   eventTitle?: string; // 新增：所属事件标题
+  reasoning?: string; // AI 推荐理由
 }
 
 /**

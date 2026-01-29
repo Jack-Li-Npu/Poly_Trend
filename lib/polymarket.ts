@@ -245,6 +245,25 @@ export async function getMarketsByTag(tagId: string, limit: number = 50): Promis
 }
 
 /**
+ * 根据一组ID批量获取事件详情
+ * @param ids 事件ID数组
+ */
+export async function getEventsByIds(ids: string[]): Promise<GammaEvent[]> {
+  try {
+    // Gamma API 似乎没有直接的批量获取接口，这里我们并发请求
+    // 或者我们可以使用 query params: id=...&id=...
+    const promises = ids.map(id => 
+      fetch(`${GAMMA_API_BASE}/events/${id}`).then(res => res.ok ? res.json() : null)
+    );
+    const results = await Promise.all(promises);
+    return results.filter(Boolean);
+  } catch (error) {
+    console.error("Error fetching events by ids:", error);
+    return [];
+  }
+}
+
+/**
  * 根据标签ID搜索市场
  * 如果API不支持tag_id参数，会优雅降级到使用category作为查询词
  * @param tagId 标签ID

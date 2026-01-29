@@ -500,7 +500,7 @@ export async function pickRelevantEvents(
   eventPool: Array<{ id: string; title: string }>,
   count: number = 30,
   dimension?: string
-): Promise<string[]> {
+): Promise<Array<{ id: string; reasoning: string }>> {
   if (!GEMINI_API_KEY) throw new Error("Gemini API key is not configured");
   if (eventPool.length === 0) return [];
 
@@ -513,27 +513,46 @@ ${dimensionHint}
 
 请从下列市场事件列表中，挑选出最相关的 ${count} 个事件。
 必须挑选正好 ${count} 个事件（如果列表够长），按相关性排序。
-只需返回它们的索引，用逗号分隔，不要有任何其他文字。
+
+输出要求：
+1. 只返回 JSON 格式，不要有任何额外说明。
+2. 格式如下：
+{
+  "picks": [
+    { "index": 0, "reason": "简短的推荐理由，说明为什么这个事件与查询相关" },
+    { "index": 5, "reason": "简短的推荐理由..." }
+  ]
+}
+3. 确保 index 与输入列表对应。
 
 事件列表：
-${titles.join("\n")}
-
-输出格式示例：
-0,5,12,18...`;
+${titles.join("\n")}`;
 
   try {
     // 使用 flash-lite 模型进行快速挑选
     const result = await callGeminiAPI(prompt);
-    const indices = result
-      .split(",")
-      .map(s => parseInt(s.trim(), 10))
-      .filter(idx => !isNaN(idx) && idx >= 0 && idx < eventPool.length)
-      .slice(0, count);
+    const jsonText = extractJsonFromText(result);
+    if (!jsonText) throw new Error("Gemini response does not contain JSON");
     
-    return indices.map(idx => eventPool[idx].id);
+    const parsed = JSON.parse(jsonText);
+    const picks = Array.isArray(parsed?.picks) ? parsed.picks : [];
+    
+    return picks
+      .map((p: any) => {
+        const idx = parseInt(p.index, 10);
+        if (!isNaN(idx) && idx >= 0 && idx < eventPool.length) {
+          return {
+            id: eventPool[idx].id,
+            reasoning: String(p.reason || "AI 匹配结果")
+          };
+        }
+        return null;
+      })
+      .filter((p: any): p is { id: string; reasoning: string } => p !== null)
+      .slice(0, count);
   } catch (error) {
     console.error(`❌ 挑选相关事件失败 (${dimension || 'unknown'}):`, error);
-    return eventPool.slice(0, count).map(e => e.id);
+    return eventPool.slice(0, count).map(e => ({ id: e.id, reasoning: "基于语义相关性匹配" }));
   }
 }
 

@@ -42,7 +42,8 @@ async function inflateMarkets(liteMarkets: any[]): Promise<MarketData[]> {
       outcomes: outcomes,
       clobTokenId: ids.length > 0 ? ids[0] : undefined,
       eventId: m.eventId,
-      eventTitle: m.eventTitle
+      eventTitle: m.eventTitle,
+      reasoning: m.reasoning
     };
   });
 }
@@ -189,7 +190,7 @@ export async function POST(request: NextRequest) {
       const dataPath = path.join(process.cwd(), 'data', 'categorized-events.json');
       if (fs.existsSync(dataPath)) {
         const allCategorized: any[] = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
-        const categories = ["经济", "政治", "技术"];
+        const categories = ['Live Crypto', 'politics', 'middle east', 'crypto', 'sports', 'pop culture', 'tech', 'ai'];
         
         const picksPromises = categories.map(async (cat) => {
           const pool = allCategorized.filter(e => e.category === cat);
@@ -197,11 +198,31 @@ export async function POST(request: NextRequest) {
           
           if (pool.length === 0) return { dimension: cat, markets: [] };
           
-          const relevantIds = await pickRelevantEvents(searchQuery, pool, 30, cat);
-          console.log(`   - 维度 [${cat}] 匹配到 ${relevantIds.length} 个相关事件`);
+          const relevantPicks = await pickRelevantEvents(searchQuery, pool, 50, cat);
+          console.log(`   - 维度 [${cat}] 匹配到 ${relevantPicks.length} 个相关事件`);
           
-          const pickedEvents = pool.filter(e => relevantIds.includes(e.id));
-          const markets = await inflateMarkets(pickedEvents.map(e => e.topMarket));
+          const relevantIds = relevantPicks.map(p => p.id);
+          const reasoningMap = new Map(relevantPicks.map(p => [p.id, p.reasoning]));
+          
+          // 获取这些事件的详细数据，包括 markets
+          const { getEventsByIds } = await import("@/lib/polymarket");
+          const fullEvents = await getEventsByIds(relevantIds);
+          
+          // 从每个事件中提取成交量最大的市场
+          const liteMarkets = fullEvents.map(event => {
+            if (!event.markets || !Array.isArray(event.markets)) return null;
+            const validMarkets = event.markets.filter((m: any) => m.active && !m.closed && m.enableOrderBook);
+            if (validMarkets.length === 0) return null;
+            const topMarket = validMarkets.sort((a: any, b: any) => (b.volume || 0) - (a.volume || 0))[0];
+            return {
+              ...topMarket,
+              eventSlug: event.slug,
+              eventTitle: event.title,
+              reasoning: reasoningMap.get(event.id)
+            };
+          }).filter(Boolean);
+
+          const markets = await inflateMarkets(liteMarkets);
           
           return { dimension: cat, markets };
         });
@@ -209,8 +230,8 @@ export async function POST(request: NextRequest) {
         semanticGroupsData = await Promise.all(picksPromises);
         semanticMatchMarkets = semanticGroupsData.flatMap(g => g.markets);
         
-        // 重新构建有效标签列表，确保顺序：Smart Search -> Semantic Match -> 三大精选 -> 原始标签
-        const smartSearchTag = { id: 'smart-search', label: '智能搜索' };
+        // 重新构建有效标签列表，确保顺序：硬匹配 -> 语义总览 -> 各大精选 -> 原始标签
+        const hardMatchTag = { id: 'smart-search', label: '硬匹配' };
         const semanticMatchTag = { id: 'semantic-match', label: '语义总览' };
         const pickTags = categories.map(cat => ({ id: `semantic-${cat}`, label: `${cat}` }));
         
@@ -218,7 +239,7 @@ export async function POST(request: NextRequest) {
         const originalTags = validTagsUsed;
         
         validTagsUsed = [
-          smartSearchTag,
+          hardMatchTag,
           semanticMatchTag,
           ...pickTags,
           ...originalTags
