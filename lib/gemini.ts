@@ -8,8 +8,10 @@ import https from 'https';
 /**
  * 直接调用 Gemini API（使用 https 模块以支持代理）
  */
-async function callGeminiAPI(prompt: string): Promise<string> {
+export async function callGeminiAPI(prompt: string): Promise<string> {
   const currentKey = process.env.GEMINI_API_KEY;
+  const baseUrl = (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com").replace(/\/$/, "");
+  const model = "gemini-2.0-flash"; // 按照用户要求固定为 gemini-2.0-flash
   
   if (!currentKey) {
     throw new Error("Gemini API key is not configured. Please set it in the UI.");
@@ -20,20 +22,29 @@ async function callGeminiAPI(prompt: string): Promise<string> {
       parts: [{
         text: prompt
       }]
-    }]
+    }],
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 2048
+    }
   });
 
   return new Promise((resolve, reject) => {
+    // 遵循用户脚本，不再在 URL 中放 key，仅通过 Header 传递
+    const endpoint = `${baseUrl}/v1beta/models/${model}:generateContent`;
+    const url = new URL(endpoint);
+    
     const options = {
-      hostname: 'generativelanguage.googleapis.com',
-      port: 443,
-      path: `/v1beta/models/gemini-flash-lite-latest:generateContent?key=${currentKey}`,
+      hostname: url.hostname,
+      port: url.port || (url.protocol === 'https:' ? 443 : 80),
+      path: url.pathname,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(requestBody)
+        'Content-Length': Buffer.byteLength(requestBody),
+        'x-goog-api-key': currentKey // 核心：使用用户脚本指定的 Header 认证
       },
-      timeout: 30000 // 30秒超时
+      timeout: 30000 
     };
 
     const req = https.request(options, (res) => {
@@ -285,15 +296,20 @@ export async function embedText(text: string): Promise<number[]> {
     }
   });
 
+  const baseUrl = (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com").replace(/\/$/, "");
+  const endpoint = `${baseUrl}/v1beta/models/text-embedding-004:embedContent`;
+  const url = new URL(endpoint);
+
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: 'generativelanguage.googleapis.com',
-      port: 443,
-      path: `/v1beta/models/text-embedding-004:embedContent?key=${process.env.GEMINI_API_KEY}`,
+      hostname: url.hostname,
+      port: url.port || (url.protocol === 'https:' ? 443 : 80),
+      path: url.pathname,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(requestBody)
+        'Content-Length': Buffer.byteLength(requestBody),
+        'x-goog-api-key': process.env.GEMINI_API_KEY as string
       },
       timeout: 10000
     };
@@ -345,14 +361,19 @@ export async function batchEmbedText(texts: string[]): Promise<number[][]> {
     });
 
     const batchResults = await new Promise<number[][]>((resolve, reject) => {
+      const baseUrl = (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com").replace(/\/$/, "");
+      const endpoint = `${baseUrl}/v1beta/models/text-embedding-004:batchEmbedContents`;
+      const url = new URL(endpoint);
+      
       const options = {
-        hostname: 'generativelanguage.googleapis.com',
-        port: 443,
-        path: `/v1beta/models/text-embedding-004:batchEmbedContents?key=${process.env.GEMINI_API_KEY}`,
+        hostname: url.hostname,
+        port: url.port || (url.protocol === 'https:' ? 443 : 80),
+        path: url.pathname,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(requestBody)
+          'Content-Length': Buffer.byteLength(requestBody),
+          'x-goog-api-key': process.env.GEMINI_API_KEY as string
         },
         timeout: 30000
       };

@@ -158,6 +158,8 @@ function HomeContent() {
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [latestSearchData, setLatestSearchData] = useState<any>(null);
   const [geminiApiKey, setGeminiApiKey] = useState<string>("");
+  const [geminiBaseUrl, setGeminiBaseUrl] = useState<string>("https://generativelanguage.googleapis.com");
+  const [configMode, setConfigMode] = useState<'official' | 'proxy'>('official');
   
   // 新增：配置面板状态
   const [showConfig, setShowConfig] = useState(false);
@@ -165,16 +167,28 @@ function HomeContent() {
   // 初始化：加载保存的配置
   useEffect(() => {
     const savedKey = localStorage.getItem("poly_trend_gemini_key");
-    if (savedKey) {
-      setGeminiApiKey(savedKey);
-    } else {
+    const savedBaseUrl = localStorage.getItem("poly_trend_gemini_base_url");
+    const savedMode = localStorage.getItem("poly_trend_config_mode") as 'official' | 'proxy';
+    
+    if (savedKey) setGeminiApiKey(savedKey);
+    if (savedBaseUrl) setGeminiBaseUrl(savedBaseUrl);
+    if (savedMode) setConfigMode(savedMode);
+    
+    if (!savedKey) {
       setShowConfig(true);
     }
   }, []);
 
-  const handleSaveApiKey = (key: string) => {
+  const handleSaveConfig = (key: string, baseUrl: string, mode: 'official' | 'proxy') => {
     setGeminiApiKey(key);
+    // 如果是官方模式，保存时强制使用默认 URL
+    const finalBaseUrl = mode === 'official' ? "https://generativelanguage.googleapis.com" : baseUrl;
+    setGeminiBaseUrl(finalBaseUrl);
+    setConfigMode(mode);
+    
     localStorage.setItem("poly_trend_gemini_key", key);
+    localStorage.setItem("poly_trend_gemini_base_url", finalBaseUrl);
+    localStorage.setItem("poly_trend_config_mode", mode);
     if (key.trim()) setError(null);
   };
 
@@ -227,7 +241,8 @@ function HomeContent() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
             query,
-            geminiKey: currentKey // 传递获取到的 Key
+            geminiKey: currentKey, // 传递获取到的 Key
+            geminiBaseUrl: geminiBaseUrl // 传递 Base URL
           }),
         });
         const results = await response.json();
@@ -235,11 +250,8 @@ function HomeContent() {
 
         setMarketData(results.markets);
         const liveCryptoTag = (results.tagsUsed || []).find((t:any) => t.id === 'semantic-Live Crypto');
-        const semanticOverviewTag = (results.tagsUsed || []).find((t:any) => t.id === 'semantic-match');
         if (liveCryptoTag && results.tagMarketsCache?.[liveCryptoTag.id]) {
           setTagMarkets(results.tagMarketsCache[liveCryptoTag.id]); setActiveTagId(liveCryptoTag.id); setShowSemanticSubTags(true);
-        } else if (semanticOverviewTag && results.tagMarketsCache?.[semanticOverviewTag.id]) {
-          setTagMarkets(results.tagMarketsCache[semanticOverviewTag.id]); setActiveTagId(semanticOverviewTag.id);
         } else if (results.tagsUsed?.length > 0) {
           const firstTag = results.tagsUsed[0]; setTagMarkets(results.tagMarketsCache?.[firstTag.id] || []); setActiveTagId(firstTag.id);
         }
@@ -341,7 +353,8 @@ function HomeContent() {
           query: latestSearchData.query, 
           markets: marketsToAnalyze, // 传输整合后的多维数据
           model: 'gemini', 
-          apiKey: geminiApiKey 
+          apiKey: geminiApiKey,
+          geminiBaseUrl: geminiBaseUrl
         }),
       });
       const result = await response.json();
@@ -374,7 +387,7 @@ function HomeContent() {
   return (
     <div className="min-h-screen w-full flex">
       <div className="flex-1 flex flex-col relative">
-        <BackgroundLines className="flex-1 flex flex-col items-center justify-center">
+        <BackgroundLines className="flex-1 flex flex-col items-center justify-start overflow-y-auto">
           {isPending && (
             <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center">
               <div className="bg-white dark:bg-neutral-900 rounded-lg p-6 flex flex-col items-center gap-4 shadow-2xl">
@@ -388,48 +401,86 @@ function HomeContent() {
             <h1 className="text-5xl font-black mb-8 tracking-tighter bg-gradient-to-b from-neutral-900 to-neutral-600 bg-clip-text text-transparent">PolyMacro Trend</h1>
             
             {/* AI 配置区域 */}
-            <div className="w-full max-w-2xl mb-4">
-              <div className={`overflow-hidden transition-all duration-500 ${showConfig || !geminiApiKey ? 'max-h-[400px]' : 'max-h-0'}`}>
-                <div className="bg-white/80 dark:bg-black/40 backdrop-blur-xl border border-neutral-200 dark:border-white/10 rounded-3xl p-6 mb-6 shadow-2xl flex flex-col gap-6">
+            <div className="w-full max-w-2xl">
+              <div className={`transition-all duration-500 ease-in-out ${showConfig || !geminiApiKey ? 'max-h-[1000px] opacity-100 mb-8' : 'max-h-0 opacity-0 mb-0 overflow-hidden'}`}>
+                <div className="bg-white/90 dark:bg-black/60 backdrop-blur-2xl border border-neutral-200 dark:border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col gap-5">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-purple-600 dark:text-purple-500 text-sm font-black uppercase tracking-widest">
-                      <Settings className="w-4 h-4" />
+                    <div className="flex items-center gap-2 text-purple-600 dark:text-purple-500 text-xs font-black uppercase tracking-widest">
+                      <Settings className="w-3.5 h-3.5" />
                       <span>Gemini AI 配置</span>
                     </div>
                     {geminiApiKey && (
-                      <button onClick={() => setShowConfig(false)} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
-                        <X className="w-4 h-4" />
+                      <button onClick={() => setShowConfig(false)} className="p-1 hover:bg-neutral-100 dark:hover:bg-white/10 rounded-full transition-colors">
+                        <X className="w-4 h-4 text-neutral-400" />
                       </button>
                     )}
                   </div>
 
-                  <div className="flex flex-col gap-3 p-4 bg-purple-50 dark:bg-white/5 rounded-2xl border border-purple-100 dark:border-white/5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">✨</span>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-neutral-900 dark:text-white">Gemini API Key</span>
-                        <span className="text-[10px] text-neutral-600 dark:text-neutral-500 italic">用于多维语义搜索与 AI 深度分析报告</span>
+                  {/* 模式切换 */}
+                  <div className="flex p-1 bg-neutral-100 dark:bg-white/5 rounded-xl border border-neutral-200 dark:border-white/5">
+                    <button 
+                      onClick={() => setConfigMode('official')}
+                      className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${configMode === 'official' ? 'bg-white dark:bg-neutral-800 shadow-sm text-purple-600' : 'text-neutral-500 hover:text-neutral-700'}`}
+                    >
+                      官方 API 模式
+                    </button>
+                    <button 
+                      onClick={() => setConfigMode('proxy')}
+                      className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${configMode === 'proxy' ? 'bg-white dark:bg-neutral-800 shadow-sm text-purple-600' : 'text-neutral-500 hover:text-neutral-700'}`}
+                    >
+                      代理转发模式
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2 p-3 bg-purple-50/50 dark:bg-white/5 rounded-2xl border border-purple-100 dark:border-white/5 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">✨</span>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-neutral-900 dark:text-white">
+                            {configMode === 'official' ? 'Gemini API Key' : '中转 API Key'}
+                          </span>
+                        </div>
                       </div>
+                      <input 
+                        type="password" 
+                        value={geminiApiKey} 
+                        onChange={(e) => setGeminiApiKey(e.target.value)} 
+                        placeholder={configMode === 'official' ? "输入官方 API Key..." : "输入中转 API Key..."} 
+                        className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-black/40 border border-neutral-300 dark:border-white/10 text-sm focus:outline-none focus:border-purple-500 transition-all text-neutral-900 dark:text-white shadow-inner"
+                      />
                     </div>
-                    <input 
-                      type="password" 
-                      value={geminiApiKey} 
-                      onChange={(e) => handleSaveApiKey(e.target.value)} 
-                      placeholder="输入您的 Gemini API Key..." 
-                      className="w-full px-4 py-3 rounded-xl bg-white dark:bg-black/40 border border-neutral-300 dark:border-white/10 text-sm focus:outline-none focus:border-purple-500 transition-all text-neutral-900 dark:text-white shadow-inner"
-                    />
+
+                    {configMode === 'proxy' && (
+                      <div className="flex flex-col gap-2 p-3 bg-blue-50/50 dark:bg-white/5 rounded-2xl border border-blue-100 dark:border-white/5 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🔗</span>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-neutral-900 dark:text-white">中转 Base URL</span>
+                          </div>
+                        </div>
+                        <input 
+                          type="text" 
+                          value={geminiBaseUrl} 
+                          onChange={(e) => setGeminiBaseUrl(e.target.value)} 
+                          placeholder="输入中转地址 (Base URL)..." 
+                          className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-black/40 border border-neutral-300 dark:border-white/10 text-sm focus:outline-none focus:border-blue-500 transition-all text-neutral-900 dark:text-white shadow-inner"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <button 
                     onClick={() => {
                       if (!geminiApiKey.trim()) {
-                        alert("请输入 Gemini API Key");
+                        alert("请输入 API Key");
                         return;
                       }
+                      handleSaveConfig(geminiApiKey, geminiBaseUrl, configMode);
                       setError(null);
                       setShowConfig(false);
                     }}
-                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm font-black uppercase tracking-widest rounded-xl hover:shadow-xl hover:shadow-purple-500/20 transition-all active:scale-[0.98]"
+                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:shadow-xl hover:shadow-purple-500/20 transition-all active:scale-[0.95] shadow-lg"
                   >
                     保存配置
                   </button>
@@ -539,26 +590,6 @@ function HomeContent() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                       {marketData.map(m => <MarketCard key={m.id} market={m} />)}
-                    </div>
-                  </div>
-                ) : activeTagId === 'semantic-match' ? (
-                  <div className="flex flex-col gap-6">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="p-2 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-500 rounded-xl">🧠</span>
-                      <h2 className="text-2xl font-black text-neutral-900 dark:text-white">语义总览</h2>
-                    </div>
-                    <div className="flex flex-col gap-12">
-                      {semanticGroups.map(g => (
-                        <div key={g.dimension} className="flex flex-col gap-6">
-                          <div className="flex items-center gap-4">
-                            <h3 className="text-sm font-black uppercase tracking-widest text-purple-600 dark:text-purple-500 px-4 py-1.5 bg-purple-50 dark:bg-purple-500/10 rounded-full border border-purple-100 dark:border-purple-500/20">{g.dimension}</h3>
-                            <div className="h-px flex-1 bg-gradient-to-r from-purple-500/20 to-transparent" />
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {g.markets.map((m:any) => <MarketCard key={m.id} market={m} />)}
-                          </div>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 ) : (

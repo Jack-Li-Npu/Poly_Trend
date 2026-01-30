@@ -103,19 +103,22 @@ async function saveSearchResults(query: string, markets: MarketData[]) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { query, geminiKey } = body;
+    const { query, geminiKey, geminiBaseUrl } = body;
 
     if (!query || typeof query !== "string" || query.trim() === "") {
       return NextResponse.json({ error: "Query is required" }, { status: 400 });
     }
 
-    console.log(`[AI-SEARCH] Received geminiKey: ${geminiKey ? 'Present (Starts with ' + geminiKey.substring(0, 4) + '...)' : 'MISSING'}`);
+    console.log(`[AI-SEARCH] Received geminiKey: ${geminiKey ? 'Present' : 'MISSING'}, geminiBaseUrl: ${geminiBaseUrl || 'Default'}`);
 
     const searchQuery = query.trim();
     
-    // 设置 Gemini API Key 环境
+    // 设置 Gemini API 环境
     if (geminiKey) {
       process.env.GEMINI_API_KEY = geminiKey;
+    }
+    if (geminiBaseUrl) {
+      process.env.GEMINI_BASE_URL = geminiBaseUrl;
     }
     console.log(`\n🚀 ========== 开始新搜索策略 (本地精选) ==========`);
     console.log(`查询: "${searchQuery}"`);
@@ -240,9 +243,8 @@ export async function POST(request: NextRequest) {
         semanticGroupsData = await Promise.all(picksPromises);
         semanticMatchMarkets = semanticGroupsData.flatMap(g => g.markets);
         
-        // 重新构建有效标签列表，确保顺序：硬匹配 -> 语义总览 -> 各大精选 -> 原始标签
+        // 重新构建有效标签列表，确保顺序：硬匹配 -> 各大精选 -> 原始标签
         const hardMatchTag = { id: 'smart-search', label: '硬匹配' };
-        const semanticMatchTag = { id: 'semantic-match', label: '语义总览' };
         const pickTags = categories.map(cat => ({ id: `semantic-${cat}`, label: `${cat}` }));
         
         // 原始标签（Step 2 中找到的）
@@ -250,14 +252,12 @@ export async function POST(request: NextRequest) {
         
         validTagsUsed = [
           hardMatchTag,
-          semanticMatchTag,
           ...pickTags,
           ...originalTags
         ];
         
         // 缓存语义匹配总览 + 分类结果
         tagMarketsDataCache['smart-search'] = marketData;
-        tagMarketsDataCache['semantic-match'] = semanticMatchMarkets;
         semanticGroupsData.forEach(g => {
           tagMarketsDataCache[`semantic-${g.dimension}`] = g.markets;
         });

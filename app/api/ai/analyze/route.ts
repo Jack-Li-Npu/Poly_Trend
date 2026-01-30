@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { model, apiKey, query, markets, timestamp, tagsUsed, searchSource } = body;
+    const { model, apiKey, query, markets, timestamp, tagsUsed, searchSource, geminiBaseUrl } = body;
     let { statistics } = body;
 
     // 如果前端没有传递统计信息，则在此处计算
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     
     switch (model) {
       case "gemini":
-        analysisResult = await analyzeWithGemini(apiKey, query, markets, statistics);
+        analysisResult = await analyzeWithGemini(apiKey, query, markets, statistics, geminiBaseUrl);
         break;
       
       case "claude":
@@ -101,11 +101,12 @@ export async function POST(request: NextRequest) {
 }
 
 // Gemini API 分析
-async function analyzeWithGemini(apiKey: string, query: string, markets: any[], statistics: any) {
-  const { GoogleGenerativeAI } = await import("@google/generative-ai");
-  const genAI = new GoogleGenerativeAI(apiKey);
-  // 使用用户确认有效的模型名称
-  const model = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" });
+async function analyzeWithGemini(apiKey: string, query: string, markets: any[], statistics: any, baseUrl?: string) {
+  // 设置环境变量以供 callGeminiAPI 使用
+  if (apiKey) process.env.GEMINI_API_KEY = apiKey;
+  if (baseUrl) process.env.GEMINI_BASE_URL = baseUrl;
+
+  const { callGeminiAPI } = await import("@/lib/gemini");
 
   const prompt = `你是一个专业的市场分析师。请分析以下Polymarket预测市场数据。
 数据包含搜索查询的直接结果（硬匹配）以及多个相关领域的精选市场（标签精选）。
@@ -134,9 +135,7 @@ ${JSON.stringify(markets.map((m: any) => ({
 
 请用中文回答，使用专业的 Markdown 格式。`;
 
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  return response.text();
+  return await callGeminiAPI(prompt);
 }
 
 // Claude API 分析
