@@ -69,9 +69,9 @@ export function AIAnalysisModal({
                   <Brain className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold">AI 深度分析报告</h2>
+                  <h2 className="text-2xl font-bold">AI Deep Analysis Report</h2>
                   <p className="text-white/80 text-sm mt-1">
-                    基于 Gemini AI 的市场深度洞察
+                    Deep market insights powered by Gemini AI
                   </p>
                 </div>
               </div>
@@ -82,7 +82,7 @@ export function AIAnalysisModal({
               {/* 问题 */}
               <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                  分析问题
+                  Analysis Query
                 </p>
                 <p className="text-lg font-medium text-gray-900 dark:text-white">
                   {query}
@@ -102,24 +102,24 @@ export function AIAnalysisModal({
                     className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full"
                   />
                   <p className="mt-4 text-gray-600 dark:text-gray-400 text-center font-bold">
-                    Gemini 正在深度分析市场数据和情绪...
+                    Gemini is analyzing market data and sentiment...
                   </p>
                   <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-500 text-center">
-                    正在整合多维数据并生成专业报告，请稍候
+                    Integrating multi-dimensional data and generating a professional report, please wait
                   </p>
                   <div className="mt-6 w-full max-w-md bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
                     <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                      分析任务：
+                      Analysis Tasks:
                     </p>
                     <ul className="text-xs text-gray-500 dark:text-gray-500 space-y-1">
-                      <li>✓ 提取预测市场核心指标</li>
-                      <li>⏳ 分析历史价格波动趋势</li>
-                      <li>⏳ 评估市场情绪与置信度</li>
-                      <li>⏳ 生成专业投资参考策略</li>
+                      <li>✓ Extracting core prediction market metrics</li>
+                      <li>⏳ Analyzing historical price trends</li>
+                      <li>⏳ Evaluating market sentiment and confidence</li>
+                      <li>⏳ Generating professional investment strategies</li>
                     </ul>
                   </div>
                   <p className="mt-4 text-xs text-gray-400 dark:text-gray-600 text-center">
-                    请保持页面打开，不要关闭此窗口
+                    Please keep this window open
                   </p>
                 </motion.div>
               )}
@@ -138,7 +138,7 @@ export function AIAnalysisModal({
                       <div className="flex items-center gap-2 mb-3">
                         <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
                         <h3 className="text-lg font-bold text-green-900 dark:text-green-100">
-                          核心结论
+                          Core Conclusion
                         </h3>
                       </div>
                       <div className="text-green-800 dark:text-green-200 leading-relaxed">
@@ -152,7 +152,7 @@ export function AIAnalysisModal({
                     <div className="flex items-center gap-2 mb-4">
                       <Activity className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                        详细分析
+                        Detailed Analysis
                       </h3>
                     </div>
                     <div className="text-gray-700 dark:text-gray-300">
@@ -164,12 +164,12 @@ export function AIAnalysisModal({
                   {analysis.market_sentiment && (
                     <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6">
                       <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-4">
-                        市场情绪摘要
+                        Market Sentiment Summary
                       </h3>
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            分析市场数
+                            Markets Analyzed
                           </p>
                           <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
                             {analysis.market_sentiment.total_markets}
@@ -177,7 +177,7 @@ export function AIAnalysisModal({
                         </div>
                         <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            平均概率
+                            Avg Probability
                           </p>
                           <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
                             {(analysis.market_sentiment.avg_probability * 100).toFixed(1)}%
@@ -189,7 +189,7 @@ export function AIAnalysisModal({
                       {analysis.market_sentiment.top_markets && analysis.market_sentiment.top_markets.length > 0 && (
                         <div className="mt-4">
                           <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-3">
-                            关键市场指标
+                            Key Market Indicators
                           </p>
                           <div className="space-y-2">
                             {analysis.market_sentiment.top_markets.map((market, idx) => (
@@ -226,9 +226,9 @@ export function AIAnalysisModal({
                     <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        <span>
+                          <span>
                           {analysis.timestamp
-                            ? new Date(analysis.timestamp).toLocaleString("zh-CN")
+                            ? new Date(analysis.timestamp).toLocaleString("en-US")
                             : ""}
                         </span>
                       </div>
@@ -243,7 +243,7 @@ export function AIAnalysisModal({
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">🤔</div>
                   <p className="text-gray-600 dark:text-gray-400">
-                    暂无分析结果
+                    No analysis results
                   </p>
                 </div>
               )}

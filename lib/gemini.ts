@@ -1,17 +1,17 @@
 /**
  * Gemini AI Service
- * 使用 Gemini API 进行语义搜索和匹配
+ * Semantic search and matching using Gemini API
  */
 
 import https from 'https';
 
 /**
- * 直接调用 Gemini API（使用 https 模块以支持代理）
+ * Call Gemini API directly (using https module to support proxies)
  */
 export async function callGeminiAPI(prompt: string): Promise<string> {
   const currentKey = process.env.GEMINI_API_KEY;
   const baseUrl = (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com").replace(/\/$/, "");
-  const model = "gemini-2.0-flash"; // 按照用户要求固定为 gemini-2.0-flash
+  const model = "gemini-2.0-flash"; // Fixed to gemini-2.0-flash as per user requirement
   
   if (!currentKey) {
     throw new Error("Gemini API key is not configured. Please set it in the UI.");
@@ -30,7 +30,7 @@ export async function callGeminiAPI(prompt: string): Promise<string> {
   });
 
   return new Promise((resolve, reject) => {
-    // 遵循用户脚本，不再在 URL 中放 key，仅通过 Header 传递
+    // Follow user script: key no longer in URL, passed only via Header
     const endpoint = `${baseUrl}/v1beta/models/${model}:generateContent`;
     const url = new URL(endpoint);
     
@@ -42,7 +42,7 @@ export async function callGeminiAPI(prompt: string): Promise<string> {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(requestBody),
-        'x-goog-api-key': currentKey // 核心：使用用户脚本指定的 Header 认证
+        'x-goog-api-key': currentKey // Core: use specified Header for authentication
       },
       timeout: 30000 
     };
@@ -84,11 +84,11 @@ export async function callGeminiAPI(prompt: string): Promise<string> {
 }
 
 /**
- * 使用 Gemini 匹配相关的标签
- * @param userQuery 用户输入的查询
- * @param tags 标签数组，每个标签包含 label 和 slug
- * @param topN 返回最相关的标签数量，默认5个
- * @returns 匹配的标签索引数组（按相关性排序）
+ * Match relevant tags using Gemini
+ * @param userQuery User's search query
+ * @param tags Array of tags, each containing label and slug
+ * @param topN Number of most relevant tags to return, defaults to 5
+ * @returns Array of matched tag indices (sorted by relevance)
  */
 export async function findRelevantTags(
   userQuery: string,
@@ -104,43 +104,43 @@ export async function findRelevantTags(
   }
 
   try {
-    // 构建标签文本列表（使用 label 和 slug）
+    // Build tag text list (using label and slug)
     const tagTexts = tags.map((tag, index) => {
       const text = tag.slug ? `${tag.label} (${tag.slug})` : tag.label;
       return `${index}: ${text}`;
     });
 
-    // 构建提示词
-    const prompt = `你是一个专业的市场分析助手。用户输入了一个查询，需要从以下标签中找到最相关的前${topN}个标签。
+    // Build prompt
+    const prompt = `You are a professional market analysis assistant. A user has entered a query, and you need to find the top ${topN} most relevant tags from the following list.
 
-用户查询：${userQuery}
+User Query: ${userQuery}
 
-标签列表（格式：索引:标签名称）：
+Tag List (Format: Index: Tag Name):
 ${tagTexts.join("\n")}
 
-要求：
-1. 仔细分析用户查询的意图和关键词
-2. 找出与查询最相关的标签（考虑同义词、相关概念等）
-3. 返回数字索引用逗号分隔，不要有空格
-4. 只返回最相关的${topN}个标签索引
-5. 只返回数字索引，不要有任何其他文字说明
-6. 确保索引在0到${tags.length - 1}之间
+Requirements:
+1. Carefully analyze the intent and keywords of the user query
+2. Find the tags most relevant to the query (consider synonyms, related concepts, etc.)
+3. Return the numeric indices separated by commas, with no spaces
+4. Return only the top ${topN} most relevant tag indices
+5. Return ONLY the numeric indices, no other text or explanation
+6. Ensure indices are between 0 and ${tags.length - 1}
 
-输出格式示例（${topN}个索引）：
+Output Format Example (${topN} indices):
 0,3,5,12,15`;
 
-    // 调用 Gemini API
+    // Call Gemini API
     console.log(`Calling Gemini API for tag matching (top ${topN})...`);
     const responseText = await callGeminiAPI(prompt);
     console.log("Gemini tag response:", responseText.substring(0, 200));
 
-    // 解析返回的索引
+    // Parse returned indices
     const indices = responseText
       .trim()
       .split(",")
       .map((s) => parseInt(s.trim(), 10))
       .filter((idx) => !isNaN(idx) && idx >= 0 && idx < tags.length)
-      .slice(0, topN); // 最多topN个
+      .slice(0, topN); // Max topN
 
     console.log(`Found ${indices.length} relevant tags`);
 
@@ -152,11 +152,11 @@ ${tagTexts.join("\n")}
 }
 
 /**
- * 使用 Gemini 匹配相关的事件标题
- * @param userQuery 用户输入的查询
- * @param eventTitles 事件标题数组
- * @param topN 返回最相关的事件数量，默认20个
- * @returns 匹配的事件索引数组（按相关性排序）
+ * Match relevant event titles using Gemini
+ * @param userQuery User's search query
+ * @param eventTitles Array of event titles
+ * @param topN Number of most relevant events to return, defaults to 20
+ * @returns Array of matched event indices (sorted by relevance)
  */
 export async function findRelevantEvents(
   userQuery: string,
@@ -172,40 +172,40 @@ export async function findRelevantEvents(
   }
 
   try {
-    // 如果标题太多，只取前200个（避免token限制）
+    // If too many titles, only take the first 200 (to avoid token limits)
     const titlesToAnalyze = eventTitles.slice(0, 200);
 
-    // 构建提示词
-    const prompt = `你是一个专业的市场分析助手。用户输入了一个查询，需要从以下事件标题中找到最相关的前${topN}个事件。
+    // Build prompt
+    const prompt = `You are a professional market analysis assistant. A user has entered a query, and you need to find the top ${topN} most relevant events from the following list of event titles.
 
-用户查询：${userQuery}
+User Query: ${userQuery}
 
-事件标题列表（格式：索引:标题）：
+Event Title List (Format: Index: Title):
 ${titlesToAnalyze.map((title, index) => `${index}: ${title}`).join("\n")}
 
-要求：
-1. 仔细分析用户查询的意图和关键词
-2. 找出与查询最相关的事件标题
-3. 返回数字索引用逗号分隔，不要有空格
-4. 只返回最相关的${topN}个事件索引
-5. 只返回数字索引，不要有任何其他文字说明
-6. 确保索引在0到${titlesToAnalyze.length - 1}之间
+Requirements:
+1. Carefully analyze the intent and keywords of the user query
+2. Find the most relevant event titles for the query
+3. Return the numeric indices separated by commas, with no spaces
+4. Return only the top ${topN} most relevant event indices
+5. Return ONLY the numeric indices, no other text or explanation
+6. Ensure indices are between 0 and ${titlesToAnalyze.length - 1}
 
-输出格式示例（${topN}个索引）：
+Output Format Example (${topN} indices):
 0,2,5,8,12,15,18,22,25,28,30,33,35,38,40,42,45,48,50,52`;
 
-    // 调用 Gemini API
+    // Call Gemini API
     console.log(`Calling Gemini API for event matching (top ${topN})...`);
     const responseText = await callGeminiAPI(prompt);
     console.log("Gemini event response:", responseText.substring(0, 200));
 
-    // 解析返回的索引
+    // Parse returned indices
     const indices = responseText
       .trim()
       .split(",")
       .map((s) => parseInt(s.trim(), 10))
       .filter((idx) => !isNaN(idx) && idx >= 0 && idx < titlesToAnalyze.length)
-      .slice(0, topN); // 最多topN个
+      .slice(0, topN); // Max topN
 
     console.log(`Found ${indices.length} relevant events`);
 
@@ -217,10 +217,10 @@ ${titlesToAnalyze.map((title, index) => `${index}: ${title}`).join("\n")}
 }
 
 /**
- * 使用 Gemini 匹配相关的市场标题
- * @param userQuery 用户输入的查询
- * @param marketTitles 所有市场的标题数组
- * @returns 匹配的市场索引数组（按相关性排序）
+ * Match relevant market titles using Gemini
+ * @param userQuery User's search query
+ * @param marketTitles Array of all market titles
+ * @returns Array of matched market indices (sorted by relevance)
  */
 export async function findRelevantMarkets(
   userQuery: string,
@@ -235,42 +235,42 @@ export async function findRelevantMarkets(
   }
 
   try {
-    // 如果标题太多，只取前500个（避免token限制）
+    // If too many titles, only take the first 500 (to avoid token limits)
     const titlesToAnalyze = marketTitles.slice(0, 500);
 
-    // 构建提示词
-    const prompt = `你是一个专业的市场分析助手。用户输入了一个查询，需要从以下市场标题中找到最相关的市场。
+    // Build prompt
+    const prompt = `You are a professional market analysis assistant. A user has entered a query, and you need to find the most relevant markets from the following list of market titles.
 
-用户查询：${userQuery}
+User Query: ${userQuery}
 
-市场标题列表（格式：索引:标题）：
+Market Title List (Format: Index: Title):
 ${titlesToAnalyze.map((title, index) => `${index}: ${title}`).join("\n")}
 
-任务：分析用户查询，找出所有相关或可能相关的市场索引。
+Task: Analyze the user query and find all relevant or potentially relevant market indices.
 
-要求：
-1. 仔细分析用户查询的含义和关键词
-2. 找出所有与查询相关、部分相关或主题相关的市场（包括同义词、相关概念、上下文相关等）
-3. 返回数字索引用逗号分隔，不要有空格
-4. 必须返回至少20个索引，如果相关市场较多，应返回接近50个索引
-5. 只返回数字索引，不要有任何其他文字说明
-6. 确保索引在0到${titlesToAnalyze.length - 1}之间
+Requirements:
+1. Carefully analyze the meaning and keywords of the user query
+2. Find all markets that are relevant, partially relevant, or topically related to the query (including synonyms, related concepts, contextually relevant, etc.)
+3. Return numeric indices separated by commas, with no spaces
+4. You MUST return at least 20 indices; if many markets are relevant, return closer to 50 indices
+5. Return ONLY the numeric indices, no other text or explanation
+6. Ensure indices are between 0 and ${titlesToAnalyze.length - 1}
 
-输出格式示例（50个索引）：
+Output Format Example (50 indices):
 0,1,2,3,5,7,10,12,15,18,20,22,25,28,30,33,35,38,40,42,45,48,50,52,55,58,60,63,65,68,70,72,75,78,80,82,85,88,90,92,95,98,100,102,105,108,110,112,115,118`;
 
-    // 调用 Gemini API
+    // Call Gemini API
     console.log("Calling Gemini API for market matching...");
     const responseText = await callGeminiAPI(prompt);
     console.log("Gemini API response:", responseText.substring(0, 200));
 
-    // 解析返回的索引
+    // Parse returned indices
     const indices = responseText
       .trim()
       .split(",")
       .map((s) => parseInt(s.trim(), 10))
       .filter((idx) => !isNaN(idx) && idx >= 0 && idx < titlesToAnalyze.length)
-      .slice(0, 50); // 最多50个
+      .slice(0, 50); // Max 50
 
     console.log(`Found ${indices.length} relevant markets`);
 
@@ -282,7 +282,7 @@ ${titlesToAnalyze.map((title, index) => `${index}: ${title}`).join("\n")}
 }
 
 /**
- * 为单个文本生成 Embedding
+ * Generate Embedding for a single text
  */
 export async function embedText(text: string): Promise<number[]> {
   if (!process.env.GEMINI_API_KEY) {
@@ -338,7 +338,7 @@ export async function embedText(text: string): Promise<number[]> {
 }
 
 /**
- * 批量为多个文本生成 Embedding
+ * Generate Embeddings for multiple texts in batch
  */
 export async function batchEmbedText(texts: string[]): Promise<number[][]> {
   if (!process.env.GEMINI_API_KEY) {
@@ -347,7 +347,7 @@ export async function batchEmbedText(texts: string[]): Promise<number[][]> {
 
   if (texts.length === 0) return [];
 
-  // Gemini batchEmbedContents 限制一次最多 100 个
+  // Gemini batchEmbedContents limited to 100 at a time
   const BATCH_SIZE = 100;
   const results: number[][] = [];
 
@@ -431,7 +431,7 @@ function extractJsonFromText(text: string): string | null {
 }
 
 /**
- * 使用 Gemini 将市场候选分为 5 个维度分组
+ * Use Gemini to group market candidates into 5 semantic dimensions
  */
 export async function findMarketGroups(
   userQuery: string,
@@ -452,7 +452,7 @@ export async function findMarketGroups(
     return `${idx}: ${m.title}${eventInfo}`;
   });
 
-  const prompt = `你是一个专业的市场分析助手。用户输入了一个查询，需要你将相关市场按 5 个不同的语义维度分组。\n\n用户查询：${userQuery}\n\n候选市场列表（格式：索引: 市场问题 (可选Event)）：\n${formattedCandidates.join("\n")}\n\n任务要求：\n1. 你需要自行生成 5 个互不重复的语义维度，并为每个维度挑选相关市场\n2. 总共挑选约 ${total} 个市场，数量可自行分配到各组\n3. 不能有重复市场索引\n4. 返回 JSON，格式如下：\n{\n  \"groups\": [\n    { \"dimension\": \"维度名称1\", \"indices\": [0,2,5] },\n    { \"dimension\": \"维度名称2\", \"indices\": [1,3,7] },\n    ... 共5组\n  ]\n}\n5. 只返回 JSON，不要有任何额外说明\n`;
+  const prompt = `You are a professional market analysis assistant. A user has entered a query, and you need to group related markets into 5 different semantic dimensions.\n\nUser Query: ${userQuery}\n\nCandidate Market List (Format: Index: Market Question (Optional Event)):\n${formattedCandidates.join("\n")}\n\nTask Requirements:\n1. You need to generate 5 unique semantic dimensions and select related markets for each dimension\n2. Select approximately ${total} markets in total, distributed across groups as you see fit\n3. No duplicate market indices\n4. Return JSON in the following format:\n{\n  \"groups\": [\n    { \"dimension\": \"Dimension Name 1\", \"indices\": [0,2,5] },\n    { \"dimension\": \"Dimension Name 2\", \"indices\": [1,3,7] },\n    ... 5 groups total\n  ]\n}\n5. Return ONLY JSON, no other text or explanation\n`;
 
   try {
     console.log("Calling Gemini API for grouped market selection...");
@@ -471,11 +471,11 @@ export async function findMarketGroups(
       .map((group: any, idx: number) => ({
         dimension: typeof group.dimension === "string" && group.dimension.trim()
           ? group.dimension.trim()
-          : `维度 ${idx + 1}`,
+          : `Dimension ${idx + 1}`,
         indices: Array.isArray(group.indices) ? group.indices : [],
       }));
 
-    // 去重和合法化索引
+    // Deduplicate and validate indices
     const used = new Set<number>();
     normalized.forEach(group => {
       group.indices = group.indices
@@ -492,14 +492,14 @@ export async function findMarketGroups(
   } catch (error) {
     console.error("Error calling Gemini API for grouped markets:", error);
 
-    // 回退方案：均分前 total 个候选
+    // Fallback: split top total candidates equally
     const safeTotal = Math.min(total, marketCandidates.length);
     const indices = Array.from({ length: safeTotal }, (_, i) => i);
     const groups: MarketGroupResult[] = [];
     for (let g = 0; g < groupCount; g++) {
       const chunk = indices.filter((_, idx) => idx % groupCount === g);
       groups.push({
-        dimension: `维度 ${g + 1}`,
+        dimension: `Dimension ${g + 1}`,
         indices: chunk,
       });
     }
@@ -508,7 +508,7 @@ export async function findMarketGroups(
 }
 
 /**
- * 使用 Gemini 从分类池中挑选与 Query 最相关的 Event
+ * Use Gemini to pick the most relevant Events from a category pool
  */
 export async function pickRelevantEvents(
   userQuery: string,
@@ -520,31 +520,31 @@ export async function pickRelevantEvents(
   if (eventPool.length === 0) return [];
 
   const titles = eventPool.map((e, idx) => `${idx}: ${e.title}`);
-  const dimensionHint = dimension ? `当前正在筛选的维度是：[${dimension}]。请确保挑选出的事件既符合用户的查询，又强烈属于[${dimension}]这一类别。` : "";
+  const dimensionHint = dimension ? `The current dimension being filtered is: [${dimension}]. Ensure that the selected events both match the user's query and strongly belong to the [${dimension}] category.` : "";
   
-  const prompt = `你是一个专业的市场筛选助手。
-用户查询：${userQuery}
+  const prompt = `You are a professional market filtering assistant.
+User Query: ${userQuery}
 ${dimensionHint}
 
-请从下列市场事件列表中，挑选出最相关的 ${count} 个事件。
-必须挑选正好 ${count} 个事件（如果列表够长），按相关性排序。
+Please pick the ${count} most relevant events from the following list of market events.
+You MUST pick exactly ${count} events (if the list is long enough), sorted by relevance.
 
-输出要求：
-1. 只返回 JSON 格式，不要有任何额外说明。
-2. 格式如下：
+Output Requirements:
+1. Return ONLY JSON format, no other text or explanation.
+2. Format as follows:
 {
   "picks": [
-    { "index": 0, "reason": "简短的推荐理由，说明为什么这个事件与查询相关" },
-    { "index": 5, "reason": "简短的推荐理由..." }
+    { "index": 0, "reason": "Short recommendation reason explaining why this event is relevant to the query" },
+    { "index": 5, "reason": "Short recommendation reason..." }
   ]
 }
-3. 确保 index 与输入列表对应。
+3. Ensure index corresponds to the input list.
 
-事件列表：
+Event List:
 ${titles.join("\n")}`;
 
   try {
-    // 使用 flash-lite 模型进行快速挑选
+    // Use flash-lite model for fast selection
     const result = await callGeminiAPI(prompt);
     const jsonText = extractJsonFromText(result);
     if (!jsonText) throw new Error("Gemini response does not contain JSON");
@@ -558,7 +558,7 @@ ${titles.join("\n")}`;
         if (!isNaN(idx) && idx >= 0 && idx < eventPool.length) {
           return {
             id: eventPool[idx].id,
-            reasoning: String(p.reason || "AI 匹配结果")
+            reasoning: String(p.reason || "AI matched result")
           };
         }
         return null;
@@ -566,13 +566,13 @@ ${titles.join("\n")}`;
       .filter((p: any): p is { id: string; reasoning: string } => p !== null)
       .slice(0, count);
   } catch (error) {
-    console.error(`❌ 挑选相关事件失败 (${dimension || 'unknown'}):`, error);
-    return eventPool.slice(0, count).map(e => ({ id: e.id, reasoning: "基于语义相关性匹配" }));
+    console.error(`❌ Failed to pick relevant events (${dimension || 'unknown'}):`, error);
+    return eventPool.slice(0, count).map(e => ({ id: e.id, reasoning: "Matched based on semantic relevance" }));
   }
 }
 
 /**
- * 使用 AI 推断 market 对之间的因果逻辑关系
+ * Use AI to infer causal logic between market pairs
  */
 export async function inferCausalRelations(
   userQuery: string,
@@ -588,39 +588,39 @@ export async function inferCausalRelations(
 
   const pairsText = pairs.map((p, i) => `
 Pair ${i}:
-- 市场 A: "${p.a.title}" (当前概率: ${p.a.price}%) ${p.a.eventTitle ? `[所属事件: ${p.a.eventTitle}]` : ''}
-- 市场 B: "${p.b.title}" (当前概率: ${p.b.price}%) ${p.b.eventTitle ? `[所属事件: ${p.b.eventTitle}]` : ''}
-- 关系类型: ${p.relationType === 'intra-event' ? '同事件不同选项' : '跨事件关联'}
-- 历史价格相关性: ${p.correlation.toFixed(2)}
+- Market A: "${p.a.title}" (Current Prob: ${p.a.price}%) ${p.a.eventTitle ? `[Event: ${p.a.eventTitle}]` : ''}
+- Market B: "${p.b.title}" (Current Prob: ${p.b.price}%) ${p.b.eventTitle ? `[Event: ${p.b.eventTitle}]` : ''}
+- Relation Type: ${p.relationType === 'intra-event' ? 'Different options same event' : 'Cross-event association'}
+- Hist Price Correlation: ${p.correlation.toFixed(2)}
 `).join('\n');
 
-  const prompt = `你是一个专业的宏观经济和政治分析师。
-针对用户的查询 "${userQuery}"，我找到了几对在价格走势上具有显著相关性的预测市场。
+  const prompt = `You are a professional macroeconomic and political analyst.
+Based on the user query "${userQuery}", I have found several pairs of prediction markets with significant historical price correlation.
 
-请分析这些市场对，判断它们之间是否存在逻辑上的因果关系、互斥关系或强关联解释。
+Please analyze these market pairs and determine if there is a logical causal relationship, mutual exclusivity, or a strong associational explanation between them.
 
-特别注意：
-1. 如果关系类型是 "同事件不同选项"，它们通常是同一个预测事件下的竞争性结果（如选举中的不同候选人），这种关系是互斥或互补的。
-2. 如果关系类型是 "跨事件关联"，则可能存在宏观上的因果驱动（如：A 事件的发生会导致 B 事件概率增加）。
+Special attention:
+1. If the relation type is "Different options same event", they are usually competitive outcomes under the same event (like different candidates in an election), and the relationship is mutually exclusive or complementary.
+2. If the relation type is "Cross-event association", there may be a macroeconomic causal driver (e.g., event A occurring will lead to an increased probability of event B).
 
-相关市场对列表：
+List of related market pairs:
 ${pairsText}
 
-请返回 JSON 格式的结果，只包含具有明确逻辑关联的对：
+Please return JSON formatted results, containing only pairs with clear logical associations:
 {
   "relations": [
     {
-      "cause": "市场 A 的标题",
-      "effect": "市场 B 的标题",
-      "confidence": 0.85, // 0-1 之间的信心指数
-      "reason": "简短的逻辑解释。如果是同事件互斥，请说明这是同一事件的不同结果。"
+      "cause": "Title of Market A",
+      "effect": "Title of Market B",
+      "confidence": 0.85, // confidence index between 0-1
+      "reason": "Short logical explanation. If same-event mutual exclusion, explain that these are different outcomes of the same event."
     }
   ]
 }
-注意：
-1. 只输出 JSON，不要有其他文字。
-2. 即使是负相关（相关性接近 -1），也可能存在因果或互斥关系。
-3. 如果没有明确关联，返回空数组。
+Notes:
+1. Output ONLY JSON, no other text.
+2. Even negative correlation (near -1) may have causal or mutually exclusive relationships.
+3. If no clear association, return an empty array.
 `;
 
   try {
@@ -631,7 +631,7 @@ ${pairsText}
     const parsed = JSON.parse(jsonText);
     return Array.isArray(parsed?.relations) ? parsed.relations : [];
   } catch (error) {
-    console.error("❌ 推断因果关系失败:", error);
+    console.error("❌ Failed to infer causal relations:", error);
     return [];
   }
 }
@@ -642,7 +642,7 @@ export interface EventCategoryAssignment {
 }
 
 /**
- * 使用 Gemini 将事件标题分类到固定类别
+ * Use Gemini to classify event titles into fixed categories
  */
 export async function classifyEventsByCategory(
   userQuery: string,
@@ -664,7 +664,7 @@ export async function classifyEventsByCategory(
     const batch = eventTitles.slice(start, start + batchSize);
     const lines = batch.map((title, idx) => `${start + idx}: ${title}`);
 
-    const prompt = `你是一个专业的市场分析助手。用户查询：${userQuery}\n\n请把下列事件标题分类到以下固定类别之一：${categories.join(" / ")}。\n\n事件列表（格式：索引:标题）：\n${lines.join("\n")}\n\n输出要求：\n1. 只返回 JSON，不要有额外说明\n2. 格式如下：\n{\n  \"assignments\": [\n    { \"index\": 0, \"category\": \"经济\" },\n    { \"index\": 1, \"category\": \"政治\" }\n  ]\n}\n3. category 必须是给定类别之一\n`;
+    const prompt = `You are a professional market analysis assistant. User Query: ${userQuery}\n\nPlease classify the following event titles into one of these fixed categories: ${categories.join(" / ")}.\n\nEvent List (Format: Index: Title):\n${lines.join("\n")}\n\nOutput Requirements:\n1. Return ONLY JSON, no extra explanation\n2. Format as follows:\n{\n  \"assignments\": [\n    { \"index\": 0, \"category\": \"Economy\" },\n    { \"index\": 1, \"category\": \"Politics\" }\n  ]\n}\n3. category MUST be one of the given categories\n`;
 
     try {
       const responseText = await callGeminiAPI(prompt);
@@ -690,11 +690,11 @@ export async function classifyEventsByCategory(
     return results;
   }
 
-  // 回退：简单关键词分类
+  // Fallback: simple keyword classification
   const keywordMap: Record<string, RegExp> = {
-    [categories[0]]: /(gdp|inflation|rate|fed|econom|债|利率|通胀|就业|经济)/i,
-    [categories[1]]: /(election|vote|politic|senate|congress|president|选举|总统|政治|国会)/i,
-    [categories[2]]: /(ai|tech|semiconductor|chip|openai|nvidia|microsoft|技术|科技|芯片)/i,
+    [categories[0]]: /(gdp|inflation|rate|fed|econom|債|利率|通胀|就业|经济|Economy)/i,
+    [categories[1]]: /(election|vote|politic|senate|congress|president|选举|总统|政治|国会|Politics)/i,
+    [categories[2]]: /(ai|tech|semiconductor|chip|openai|nvidia|microsoft|技术|科技|芯片|Tech)/i,
   };
 
   return eventTitles.map((title, index) => {

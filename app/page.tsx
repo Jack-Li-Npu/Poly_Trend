@@ -30,7 +30,7 @@ import { AIAnalysisModal } from "@/components/ui/ai-analysis-modal";
 
 // --- Components ---
 
-function MarketCard({ market }: { market: MarketData }) {
+function MarketCard({ market, variant = 'hard' }: { market: MarketData, variant?: 'hard' | 'semantic' }) {
   const [priceHistory, setPriceHistory] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
@@ -53,8 +53,24 @@ function MarketCard({ market }: { market: MarketData }) {
 
   const yesProbability = market.probability;
   const noProbability = 100 - yesProbability;
-  const yesColor = yesProbability > 50 ? "text-emerald-500" : yesProbability > 30 ? "text-amber-500" : "text-blue-500";
-  const noColor = noProbability > 50 ? "text-emerald-500" : noProbability > 30 ? "text-amber-500" : "text-blue-500";
+  
+  // 颜色配置
+  const themes = {
+    hard: {
+      title: "text-blue-900 dark:text-blue-100",
+      chart: "#3b82f6", // blue-500
+      yes: "text-blue-600",
+      no: "text-blue-400"
+    },
+    semantic: {
+      title: "text-emerald-900 dark:text-emerald-100",
+      chart: "#10b981", // emerald-500
+      yes: "text-emerald-600",
+      no: "text-emerald-400"
+    }
+  };
+
+  const theme = themes[variant];
 
   return (
     <CardContainer className="inter-var w-full">
@@ -64,56 +80,54 @@ function MarketCard({ market }: { market: MarketData }) {
         rel="noopener noreferrer"
         className="block w-full"
       >
-        <CardBody className="w-full h-[520px] bg-gray-50 relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] rounded-xl p-6 border cursor-pointer flex flex-col">
-          <div className="absolute top-4 right-4 z-10">
-            <CircularProgress percentage={yesProbability} size={56} strokeWidth={4} />
+        <CardBody className="w-full h-[350px] bg-gray-50 relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] rounded-lg p-3 border cursor-pointer flex flex-col">
+          <div className="absolute top-2 right-2 z-10 flex">
+            <CircularProgress percentage={yesProbability} size={36} strokeWidth={2.5} />
           </div>
-          <div className="flex items-start gap-3 mb-3 pr-14">
+          <div className="flex items-start gap-1.5 mb-1.5 pr-9">
             {market.image && (
-              <div className="w-16 h-16 flex-shrink-0 overflow-hidden rounded-lg bg-neutral-100 dark:bg-neutral-800 shadow-inner border border-neutral-200 dark:border-neutral-700">
+              <div className="w-8 h-8 flex-shrink-0 overflow-hidden rounded-md bg-neutral-100 dark:bg-neutral-800 shadow-inner border border-neutral-200 dark:border-neutral-700">
                 <img src={market.image} alt={market.title} className="w-full h-full object-cover" />
               </div>
             )}
-            <CardItem translateZ="50" className="flex-1 text-sm font-bold text-neutral-800 dark:text-white leading-tight">
+            <CardItem translateZ="50" className={`flex-1 text-[9px] font-bold leading-[1.3] ${theme.title}`}>
               {market.title}
             </CardItem>
           </div>
-          <CardItem translateZ="40" className="w-full mt-4 mb-4 flex-1 min-h-[140px]">
+          <CardItem translateZ="40" className="w-full mt-auto h-[120px]">
             {isLoadingHistory ? (
-              <div className="w-full h-[140px] flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 rounded-xl animate-pulse">
-                <Loader2 className="w-5 h-5 text-neutral-400 animate-spin" />
+              <div className="w-full h-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 rounded-lg animate-pulse">
+                <Loader2 className="w-3 h-3 text-neutral-400 animate-spin" />
               </div>
             ) : (
-              <PriceChart data={priceHistory} height={140} color={yesProbability > 50 ? "#10b981" : yesProbability > 30 ? "#f59e0b" : "#3b82f6"} />
+              <PriceChart data={priceHistory} height={120} color={theme.chart} />
             )}
           </CardItem>
-          <CardItem as="div" translateZ="60" className="mt-2">
-            {market.outcomes && market.outcomes.length === 2 && (
-              <div className="mb-2 text-xs text-neutral-600 dark:text-neutral-400 truncate">预测: {market.outcomes[0]} vs {market.outcomes[1]}</div>
-            )}
-            <div className="flex items-baseline gap-2">
-              <span className={`text-2xl font-bold ${yesColor}`}>{yesProbability.toFixed(1)}%</span>
-              <span className="text-xs text-neutral-600 dark:text-neutral-400 truncate">{market.outcomes?.[0] || "Yes"}</span>
-            </div>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className={`text-lg font-semibold ${noColor}`}>{noProbability.toFixed(1)}%</span>
-              <span className="text-xs text-neutral-600 dark:text-neutral-400 truncate">{market.outcomes?.[1] || "No"}</span>
-            </div>
-          </CardItem>
-          <CardItem translateZ="70" className="text-xs text-neutral-600 dark:text-neutral-400 mt-3 flex flex-col gap-2">
-            <div className="flex items-center justify-between w-full">
-              <span>交易量: {market.volume}</span>
-              {priceHistory.length > 0 && <span className="text-[10px] text-neutral-500">历史跨度: {priceHistory.length} 天</span>}
-            </div>
-            {market.reasoning && (
-              <div className="text-[10px] italic text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 p-2 rounded-lg border border-purple-100 dark:border-purple-500/10 shadow-sm">
-                AI 依据: {market.reasoning}
+          
+          {/* 底部信息区域容器 */}
+          <div className="flex flex-col gap-1 w-full">
+            <CardItem as="div" translateZ="60" className="w-full">
+              <div className="flex items-baseline gap-1">
+                <span className={`text-sm font-bold ${theme.yes}`}>{yesProbability.toFixed(1)}%</span>
+                <span className="text-[8px] text-neutral-600 dark:text-neutral-400 truncate max-w-[50px]">{market.outcomes?.[0] || "Yes"}</span>
               </div>
-            )}
-          </CardItem>
-          <CardItem translateZ={20} className="text-xs text-neutral-600 dark:text-neutral-500 mt-auto pt-4 flex items-center gap-1 group-hover/card:text-blue-600 transition-colors">
-            <span>查看详情</span><span>→</span>
-          </CardItem>
+              <div className="flex items-baseline gap-1 mt-0.5">
+                <span className={`text-xs font-semibold ${theme.no}`}>{noProbability.toFixed(1)}%</span>
+                <span className="text-[8px] text-neutral-600 dark:text-neutral-400 truncate max-w-[50px]">{market.outcomes?.[1] || "No"}</span>
+              </div>
+            </CardItem>
+            <CardItem translateZ="70" className="text-[8px] text-neutral-600 dark:text-neutral-400 mt-1 flex flex-col gap-1 w-full">
+              <span>Vol: {market.volume}</span>
+              {market.reasoning && (
+                <div className="text-[7px] italic text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 p-1 rounded border border-purple-100 dark:border-purple-500/10 line-clamp-2">
+                  {market.reasoning}
+                </div>
+              )}
+            </CardItem>
+            <CardItem translateZ={20} className="text-[8px] text-neutral-600 dark:text-neutral-500 pt-1 flex items-center gap-0.5 group-hover/card:text-blue-600 transition-colors w-full border-t border-neutral-100 dark:border-white/5">
+              <span>Details</span><span>→</span>
+            </CardItem>
+          </div>
         </CardBody>
       </a>
     </CardContainer>
@@ -228,7 +242,7 @@ function HomeContent() {
     const currentKey = geminiApiKey.trim() || localStorage.getItem("poly_trend_gemini_key") || "";
     
     if (!currentKey.toString().trim()) {
-      setError("请先设置 Gemini API Key 以启用语义搜索功能");
+      setError("Please set Gemini API Key to enable semantic search.");
       setShowConfig(true);
       return;
     }
@@ -271,7 +285,7 @@ function HomeContent() {
     
     const currentKey = geminiApiKey.trim() || localStorage.getItem("poly_trend_gemini_key") || "";
     if (!currentKey.toString().trim()) {
-      setError("请先设置 Gemini API Key 以启用语义搜索功能");
+      setError("Please set Gemini API Key to enable semantic search.");
       setShowConfig(true);
       return;
     }
@@ -303,7 +317,7 @@ function HomeContent() {
   const handleAIAnalysis = async () => {
     if (!latestSearchData) return;
     if (!geminiApiKey.trim()) {
-      alert("请先设置 Gemini API Key");
+      alert("Please set Gemini API Key first");
       setShowConfig(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
@@ -339,7 +353,7 @@ function HomeContent() {
           if (!seenMarketIds.has(m.id)) {
             marketsToAnalyze.push({
               ...m,
-              reasoning: `${tag.label} 标签精选市场` // 补充背景信息
+              reasoning: `Selected market for ${tag.label} tag` // 补充背景信息
             });
             seenMarketIds.add(m.id);
           }
@@ -369,7 +383,7 @@ function HomeContent() {
       setAnalysisComplete(true); 
       setShowAIAnalysis(true);
     } catch (error: any) { 
-      alert(`AI 分析失败: ${error.message}`); 
+      alert(`AI Analysis failed: ${error.message}`); 
     } finally { setIsAnalyzing(false); }
   };
 
@@ -392,13 +406,13 @@ function HomeContent() {
             <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center">
               <div className="bg-white dark:bg-neutral-900 rounded-lg p-6 flex flex-col items-center gap-4 shadow-2xl">
                 <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
-                <p className="font-bold">深度分析市场语义中...</p>
+                <p className="font-bold">Analyzing market semantics...</p>
               </div>
             </div>
           )}
 
-          <div className="relative z-20 w-full flex flex-col items-center justify-start px-4 pt-12 pb-32 min-h-screen">
-            <h1 className="text-5xl font-black mb-8 tracking-tighter bg-gradient-to-b from-neutral-900 to-neutral-600 bg-clip-text text-transparent">PolyMacro Trend</h1>
+          <div className="relative z-20 w-full flex flex-col items-center justify-start px-4 pt-8 pb-20 min-h-screen">
+            <h1 className="text-4xl font-black mb-6 tracking-tighter bg-gradient-to-b from-neutral-900 to-neutral-600 bg-clip-text text-transparent">PolyMacro Trend</h1>
             
             {/* AI 配置区域 */}
             <div className="w-full max-w-2xl">
@@ -407,7 +421,7 @@ function HomeContent() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-purple-600 dark:text-purple-500 text-xs font-black uppercase tracking-widest">
                       <Settings className="w-3.5 h-3.5" />
-                      <span>Gemini AI 配置</span>
+                      <span>Gemini AI Configuration</span>
                     </div>
                     {geminiApiKey && (
                       <button onClick={() => setShowConfig(false)} className="p-1 hover:bg-neutral-100 dark:hover:bg-white/10 rounded-full transition-colors">
@@ -422,13 +436,13 @@ function HomeContent() {
                       onClick={() => setConfigMode('official')}
                       className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${configMode === 'official' ? 'bg-white dark:bg-neutral-800 shadow-sm text-purple-600' : 'text-neutral-500 hover:text-neutral-700'}`}
                     >
-                      官方 API 模式
+                      Official API
                     </button>
                     <button 
                       onClick={() => setConfigMode('proxy')}
                       className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${configMode === 'proxy' ? 'bg-white dark:bg-neutral-800 shadow-sm text-purple-600' : 'text-neutral-500 hover:text-neutral-700'}`}
                     >
-                      代理转发模式
+                      Proxy Mode
                     </button>
                   </div>
 
@@ -438,7 +452,7 @@ function HomeContent() {
                         <span className="text-lg">✨</span>
                         <div className="flex flex-col">
                           <span className="text-xs font-bold text-neutral-900 dark:text-white">
-                            {configMode === 'official' ? 'Gemini API Key' : '中转 API Key'}
+                            {configMode === 'official' ? 'Gemini API Key' : 'Proxy API Key'}
                           </span>
                         </div>
                       </div>
@@ -446,7 +460,7 @@ function HomeContent() {
                         type="password" 
                         value={geminiApiKey} 
                         onChange={(e) => setGeminiApiKey(e.target.value)} 
-                        placeholder={configMode === 'official' ? "输入官方 API Key..." : "输入中转 API Key..."} 
+                        placeholder={configMode === 'official' ? "Enter official API Key..." : "Enter proxy API Key..."} 
                         className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-black/40 border border-neutral-300 dark:border-white/10 text-sm focus:outline-none focus:border-purple-500 transition-all text-neutral-900 dark:text-white shadow-inner"
                       />
                     </div>
@@ -456,14 +470,14 @@ function HomeContent() {
                         <div className="flex items-center gap-2">
                           <span className="text-lg">🔗</span>
                           <div className="flex flex-col">
-                            <span className="text-xs font-bold text-neutral-900 dark:text-white">中转 Base URL</span>
+                            <span className="text-xs font-bold text-neutral-900 dark:text-white">Proxy Base URL</span>
                           </div>
                         </div>
                         <input 
                           type="text" 
                           value={geminiBaseUrl} 
                           onChange={(e) => setGeminiBaseUrl(e.target.value)} 
-                          placeholder="输入中转地址 (Base URL)..." 
+                          placeholder="Enter proxy address (Base URL)..." 
                           className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-black/40 border border-neutral-300 dark:border-white/10 text-sm focus:outline-none focus:border-blue-500 transition-all text-neutral-900 dark:text-white shadow-inner"
                         />
                       </div>
@@ -473,7 +487,7 @@ function HomeContent() {
                   <button 
                     onClick={() => {
                       if (!geminiApiKey.trim()) {
-                        alert("请输入 API Key");
+                        alert("Please enter an API Key");
                         return;
                       }
                       handleSaveConfig(geminiApiKey, geminiBaseUrl, configMode);
@@ -482,80 +496,80 @@ function HomeContent() {
                     }}
                     className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:shadow-xl hover:shadow-purple-500/20 transition-all active:scale-[0.95] shadow-lg"
                   >
-                    保存配置
+                    Save Configuration
                   </button>
                 </div>
               </div>
               
               {!showConfig && geminiApiKey && (
-                <div className="flex justify-end">
+                <div className="flex justify-end mb-2">
                   <button 
                     onClick={() => setShowConfig(true)}
-                    className="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 hover:bg-white/80 dark:bg-white/5 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/5 transition-all shadow-sm"
+                    className="group flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/50 hover:bg-white/80 dark:bg-white/5 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/5 transition-all shadow-sm"
                   >
-                    <span className="text-[10px] uppercase font-black text-neutral-500 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">修改 AI 配置</span>
-                    <Settings className="w-3 h-3 text-neutral-400 group-hover:rotate-90 transition-transform duration-500" />
+                    <span className="text-[9px] uppercase font-black text-neutral-500 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">Edit Config</span>
+                    <Settings className="w-2.5 h-2.5 text-neutral-400 group-hover:rotate-90 transition-transform duration-500" />
                   </button>
                 </div>
               )}
             </div>
 
-            <div className="w-full max-w-2xl mb-12 flex gap-2">
+            <div className="w-full max-w-2xl mb-6 flex gap-2">
               <form onSubmit={handleSubmit} className="flex-1 relative group">
-                <div className="absolute inset-0 bg-blue-500/20 rounded-2xl blur-xl group-hover:bg-blue-500/30 transition-all duration-500 opacity-0 group-hover:opacity-100" />
+                <div className="absolute inset-0 bg-blue-500/20 rounded-xl blur-lg group-hover:bg-blue-500/30 transition-all duration-500 opacity-0 group-hover:opacity-100" />
                 <input 
                   type="text" 
                   value={searchQuery} 
                   onChange={(e) => setSearchQuery(e.target.value)} 
-                  placeholder="搜索市场趋势..." 
-                  className="relative w-full px-12 py-4 rounded-2xl bg-white dark:bg-neutral-900 border-2 border-neutral-300 dark:border-neutral-800 focus:border-blue-500 outline-none text-lg font-medium transition-all text-neutral-900 dark:text-white shadow-xl" 
+                  placeholder="Search market trends..." 
+                  className="relative w-full px-10 py-3 rounded-xl bg-white dark:bg-neutral-900 border-2 border-neutral-300 dark:border-neutral-800 focus:border-blue-500 outline-none text-base font-medium transition-all text-neutral-900 dark:text-white shadow-lg" 
                 />
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <button 
                   type="submit"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md"
                 >
-                  搜索
+                  Search
                 </button>
               </form>
             </div>
 
             {error && (
-              <div className="w-full max-w-2xl mb-8 p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-2xl text-red-600 dark:text-red-400 text-sm font-bold text-center shadow-sm">
+              <div className="w-full max-w-2xl mb-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-xl text-red-600 dark:text-red-400 text-xs font-bold text-center shadow-sm">
                 {error}
               </div>
             )}
 
             {(searchMessage || latestSearchData) && (
-              <div className="w-full max-w-[1600px] mb-8 bg-white/40 dark:bg-neutral-900/40 backdrop-blur-md p-4 rounded-3xl border border-white/10 flex justify-between items-center shadow-xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <p className="text-sm font-bold text-neutral-800 dark:text-neutral-300">{searchMessage || "分析就绪"}</p>
+              <div className="w-full max-w-[1900px] mb-6 bg-white/40 dark:bg-neutral-900/40 backdrop-blur-md p-3 rounded-2xl border border-white/10 flex justify-between items-center shadow-lg">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                  <p className="text-xs font-bold text-neutral-800 dark:text-neutral-300">{searchMessage || "Analysis Ready"}</p>
                 </div>
                 <div className="flex gap-2">
                   <button 
                     onClick={handleAIAnalysis}
                     disabled={!latestSearchData || isAnalyzing}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-purple-500/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-bold text-[10px] shadow-md shadow-purple-500/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isAnalyzing ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>正在分析...</span>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Analyzing...</span>
                       </>
                     ) : (
                       <>
-                        <Brain className="w-4 h-4" />
-                        <span>AI 深度分析 (Gemini)</span>
+                        <Brain className="w-3 h-3" />
+                        <span>AI Deep Analysis</span>
                       </>
                     )}
                   </button>
                   {analysisComplete && (
                     <button 
                       onClick={() => setShowAIAnalysis(true)} 
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all transform hover:scale-105"
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg shadow-md shadow-emerald-500/20 transition-all transform hover:scale-105"
                     >
-                      查看分析报告
+                      View Report
                     </button>
                   )}
                 </div>
@@ -563,51 +577,57 @@ function HomeContent() {
             )}
 
             {(marketData.length > 0 || tagMarkets.length > 0) && (
-              <div className="w-full max-w-[1600px] mb-8 flex flex-wrap gap-2 justify-center">
-                {tagsUsed.map((tag) => (
-                  <button
-                    key={tag.id}
-                    onClick={() => handleTagClick(tag)}
-                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                      activeTagId === tag.id
-                        ? "bg-purple-600 text-white shadow-lg shadow-purple-500/20"
-                        : "bg-white dark:bg-neutral-900/40 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 text-neutral-700 dark:text-neutral-400 border border-neutral-300 dark:border-white/10 shadow-sm"
-                    }`}
-                  >
-                    {tag.label}
-                  </button>
-                ))}
-              </div>
-            )}
+              <div className="w-full max-w-[1900px] flex flex-col gap-4">
+                {/* 顶部标签栏 */}
+                <div className="flex justify-center items-center gap-1.5 pb-2 border-b border-neutral-200 dark:border-white/10">
+                  {tagsUsed.filter(t => t.id !== 'smart-search').map((tag) => (
+                    <button
+                      key={tag.id}
+                      onClick={() => handleTagClick(tag)}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                        activeTagId === tag.id
+                          ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
+                          : "bg-white/60 dark:bg-neutral-900/40 hover:bg-white dark:hover:bg-neutral-800/60 text-neutral-600 dark:text-neutral-400 border border-neutral-300 dark:border-white/10"
+                      }`}
+                    >
+                      {tag.label}
+                    </button>
+                  ))}
+                </div>
 
-            {(marketData.length > 0 || tagMarkets.length > 0) && (
-              <div className="w-full max-w-[1600px]">
-                {activeTagId === 'smart-search' ? (
-                  <div className="flex flex-col gap-6">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="p-2 bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-500 rounded-xl">🔍</span>
-                      <h2 className="text-2xl font-black text-neutral-900 dark:text-white">硬匹配结果</h2>
+                {/* 左右对称布局 */}
+                <div className="flex gap-4 items-start">
+                  {/* 左侧：硬匹配结果 */}
+                  <div className="flex-1 flex flex-col gap-2">
+                    <div className="flex items-center gap-2 px-1">
+                      <span className="p-1 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-500 rounded-md text-xs">🔍</span>
+                      <h2 className="text-xs font-black text-neutral-900 dark:text-white uppercase tracking-tight">Hard Match Results</h2>
+                      <div className="h-px flex-1 bg-gradient-to-r from-blue-500/20 to-transparent" />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {marketData.map(m => <MarketCard key={m.id} market={m} />)}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-6">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="p-2 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-500 rounded-xl">🏷️</span>
-                      <h2 className="text-2xl font-black text-neutral-900 dark:text-white">{tagsUsed.find(t => t.id === activeTagId)?.label || "标签结果"}</h2>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {tagMarkets.map(m => <MarketCard key={m.id} market={m} />)}
+                    <div className="grid grid-cols-3 gap-2">
+                      {marketData.map(m => <MarketCard key={m.id} market={m} variant="hard" />)}
                     </div>
                   </div>
-                )}
+
+                  {/* 右侧：标签结果 */}
+                  <div className="flex-1 flex flex-col gap-2">
+                    <div className="flex items-center gap-2 px-1">
+                      <span className="p-1 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-500 rounded-md text-xs">🏷️</span>
+                      <h2 className="text-xs font-black text-neutral-900 dark:text-white uppercase tracking-tight">
+                        {tagsUsed.find(t => t.id === activeTagId)?.label || "Semantic Results"}
+                      </h2>
+                      <div className="h-px flex-1 bg-gradient-to-r from-emerald-500/20 to-transparent" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {tagMarkets.map(m => <MarketCard key={m.id} market={m} variant="semantic" />)}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
 
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
             <FloatingDock items={dockItems} desktopClassName="!static" />
           </div>
         </BackgroundLines>

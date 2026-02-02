@@ -60,12 +60,14 @@ export function CircularProgress({
       </svg>
       {/* 中间文字 */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xl font-bold text-gray-900 dark:text-white">
+        <span className={`${size < 50 ? 'text-[10px]' : 'text-sm'} font-bold text-gray-900 dark:text-white`}>
           {percentage.toFixed(0)}%
         </span>
-        <span className="text-[10px] text-gray-500 dark:text-gray-400">
-          chance
-        </span>
+        {size >= 50 && (
+          <span className="text-[10px] text-gray-500 dark:text-gray-400">
+            chance
+          </span>
+        )}
       </div>
     </div>
   );

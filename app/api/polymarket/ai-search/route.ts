@@ -120,8 +120,8 @@ export async function POST(request: NextRequest) {
     if (geminiBaseUrl) {
       process.env.GEMINI_BASE_URL = geminiBaseUrl;
     }
-    console.log(`\n🚀 ========== 开始新搜索策略 (本地精选) ==========`);
-    console.log(`查询: "${searchQuery}"`);
+    console.log(`\n🚀 ========== Starting new search strategy (local selection) ==========`);
+    console.log(`Query: "${searchQuery}"`);
 
     // 1. 获取直接搜索结果
     let directSearchMarkets: GammaMarket[] = [];
@@ -138,14 +138,14 @@ export async function POST(request: NextRequest) {
         .filter(tag => tag.label.toLowerCase().includes(searchLower) || searchLower.includes(tag.label.toLowerCase()))
         .slice(0, 3);
     } catch (error) {
-      console.warn("❌ 直接搜索失败:", error);
+      console.warn("❌ Direct search failed:", error);
     }
 
     // 2. 获取相关 Tags 并缓存
     let validTagsUsed: any[] = [];
     let tagMarketsDataCache: Record<string, MarketData[]> = {};
     try {
-      console.log(`\n🔍 ========== 开始原始标签搜索流程 ==========`);
+      console.log(`\n🔍 ========== Starting original tag search flow ==========`);
       const { getCachedTags } = await import("@/lib/tag-cache");
       const { findRelevantTags } = await import("@/lib/gemini");
       const { getEventsByTag } = await import("@/lib/polymarket");
@@ -155,17 +155,17 @@ export async function POST(request: NextRequest) {
       // 过滤掉本地维护的无活跃市场标签
       const activeTagsOnly = filterDeadTags(allTags);
       
-      console.log(`✅ 标签库加载完成，共 ${allTags.length} 个标签 (过滤后剩余 ${activeTagsOnly.length} 个)`);
+      console.log(`✅ Tag library loaded, total ${allTags.length} tags (${activeTagsOnly.length} remaining after filtering)`);
       
       if (activeTagsOnly.length > 0) {
-        console.log(`🤖 正在调用 Gemini 匹配相关标签...`);
+        console.log(`🤖 Calling Gemini to match relevant tags...`);
         const relevantTagIndices = await findRelevantTags(searchQuery, activeTagsOnly, 15);
         const candidateTags = relevantTagIndices.map(idx => activeTagsOnly[idx]).filter(Boolean);
-        console.log(`✅ Gemini 匹配到 ${candidateTags.length} 个候选标签: ${candidateTags.map(t => t.label).join(', ')}`);
+        console.log(`✅ Gemini matched ${candidateTags.length} candidate tags: ${candidateTags.map(t => t.label).join(', ')}`);
 
         for (const tag of candidateTags) {
           if (validTagsUsed.length >= 8) break;
-          console.log(`🔄 正在拉取标签 "${tag.label}" (${tag.id}) 的市场...`);
+          console.log(`🔄 Fetching markets for tag "${tag.label}" (${tag.id})...`);
           const events = await getEventsByTag(tag.id, 50);
           const markets: GammaMarket[] = [];
           events.forEach(event => {
@@ -177,19 +177,19 @@ export async function POST(request: NextRequest) {
           if (markets.length > 0) {
             tagMarketsDataCache[tag.id] = await convertGammaToMarketData(markets.slice(0, 30));
             validTagsUsed.push(tag);
-            console.log(`   ✅ 标签 "${tag.label}" 有效，包含 ${tagMarketsDataCache[tag.id].length} 个市场`);
+            console.log(`   ✅ Tag "${tag.label}" is valid, contains ${tagMarketsDataCache[tag.id].length} markets`);
           } else {
-            console.log(`   ⚠️ 标签 "${tag.label}" 下无活跃市场，标记为不活跃并跳过`);
+            console.log(`   ⚠️ Tag "${tag.label}" has no active markets, marking as dead and skipping`);
             markTagAsDead(tag.id);
           }
         }
       } else {
-        console.warn("⚠️ 警告: 标签库为空或无有效标签，无法进行标签匹配");
+        console.warn("⚠️ Warning: Tag library is empty or has no valid tags, unable to perform tag matching");
       }
-      console.log(`✅ 原始标签搜索完成，最终采用 ${validTagsUsed.length} 个标签`);
+      console.log(`✅ Original tag search complete, final selection: ${validTagsUsed.length} tags`);
       console.log(`==========================================\n`);
     } catch (error) {
-      console.warn("❌ 标签搜索失败:", error);
+      console.warn("❌ Tag search failed:", error);
     }
 
     // 3. 转换直接搜索结果
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
     let semanticGroupsData: Array<{ dimension: string; markets: MarketData[] }> = [];
     let semanticMatchMarkets: MarketData[] = [];
     try {
-      console.log(`🧠 执行本地语义精选...`);
+      console.log(`🧠 Executing local semantic selection...`);
       const dataPath = path.join(process.cwd(), 'data', 'categorized-events.json');
       if (fs.existsSync(dataPath)) {
         const allCategorized: any[] = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
@@ -207,12 +207,12 @@ export async function POST(request: NextRequest) {
         
         const picksPromises = categories.map(async (cat) => {
           const pool = allCategorized.filter(e => e.category === cat);
-          console.log(`   - 正在为维度 [${cat}] 筛选市场 (池大小: ${pool.length})...`);
+          console.log(`   - Filtering markets for dimension [${cat}] (pool size: ${pool.length})...`);
           
           if (pool.length === 0) return { dimension: cat, markets: [] };
           
           const relevantPicks = await pickRelevantEvents(searchQuery, pool, 50, cat);
-          console.log(`   - 维度 [${cat}] 匹配到 ${relevantPicks.length} 个相关事件`);
+          console.log(`   - Dimension [${cat}] matched ${relevantPicks.length} relevant events`);
           
           const relevantIds = relevantPicks.map(p => p.id);
           const reasoningMap = new Map(relevantPicks.map(p => [p.id, p.reasoning]));
@@ -244,7 +244,7 @@ export async function POST(request: NextRequest) {
         semanticMatchMarkets = semanticGroupsData.flatMap(g => g.markets);
         
         // 重新构建有效标签列表，确保顺序：硬匹配 -> 各大精选 -> 原始标签
-        const hardMatchTag = { id: 'smart-search', label: '硬匹配' };
+        const hardMatchTag = { id: 'smart-search', label: 'Hard Match' };
         const pickTags = categories.map(cat => ({ id: `semantic-${cat}`, label: `${cat}` }));
         
         // 原始标签（Step 2 中找到的）
@@ -263,7 +263,7 @@ export async function POST(request: NextRequest) {
         });
       }
     } catch (error) {
-      console.warn("❌ 本地语义筛选失败:", error);
+      console.warn("❌ Local semantic filtering failed:", error);
     }
 
     // 构建全量相关数据供 AI 分析
@@ -277,7 +277,7 @@ export async function POST(request: NextRequest) {
       markets: marketData,
       allRelevantMarkets,
       source: 'hybrid',
-      message: `找到 ${marketData.length} 个直接相关市场，以及多维精选分类`,
+      message: `Found ${marketData.length} direct results and multi-dimensional selections`,
       suggestedQueries: validTagsUsed.map(t => t.label).slice(0, 3),
       tagsUsed: validTagsUsed,
       tagMarketsCache: tagMarketsDataCache,

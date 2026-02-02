@@ -38,7 +38,7 @@ export function PriceChart({ data, height = 120, color = "#3b82f6" }: PriceChart
   if (!data || data.length < 2) {
     return (
       <div className="flex items-center justify-center bg-neutral-50 dark:bg-neutral-900/50 rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800" style={{ height }}>
-        <p className="text-xs text-neutral-400">暂无充足价格历史数据</p>
+        <p className="text-xs text-neutral-400">Insufficient price history data</p>
       </div>
     );
   }
