@@ -307,10 +307,25 @@ function HomeContent() {
   };
 
   const handleTagClick = (tag: any) => {
-    if (tag.id === 'semantic-match') setShowSemanticSubTags(!showSemanticSubTags);
-    else if (!tag.id.startsWith('semantic-')) setShowSemanticSubTags(false);
-    if (tagMarketsCache[tag.id]) {
-      setTagMarkets(tagMarketsCache[tag.id]); setActiveTagId(tag.id);
+    // 1. 处理语义子标签的展示逻辑
+    if (tag.id === 'semantic-match') {
+      setShowSemanticSubTags(!showSemanticSubTags);
+    } else if (!tag.id.startsWith('semantic-')) {
+      setShowSemanticSubTags(false);
+    }
+
+    // 2. 只有当点击的是非当前激活 Tag 时才执行更新
+    if (tag.id !== activeTagId) {
+      // 3. 强制刷新：先清空当前显示的内容
+      setTagMarkets([]); 
+      
+      // 4. 延迟一帧设置新数据，确保触发 React 的完整渲染周期
+      setTimeout(() => {
+        if (tagMarketsCache[tag.id]) {
+          setTagMarkets(tagMarketsCache[tag.id]);
+          setActiveTagId(tag.id);
+        }
+      }, 0);
     }
   };
 
@@ -618,8 +633,8 @@ function HomeContent() {
                       </h2>
                       <div className="h-px flex-1 bg-gradient-to-r from-emerald-500/20 to-transparent" />
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {tagMarkets.map(m => <MarketCard key={m.id} market={m} variant="semantic" />)}
+                    <div className="grid grid-cols-3 gap-2" key={`tag-grid-${activeTagId}`}>
+                      {tagMarkets.map(m => <MarketCard key={`${activeTagId}-${m.id}`} market={m} variant="semantic" />)}
                     </div>
                   </div>
                 </div>
