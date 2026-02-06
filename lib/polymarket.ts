@@ -524,6 +524,48 @@ export function sortAndFilterMarkets(markets: GammaMarket[], limit: number = 50)
 }
 
 /**
+ * Convert GammaMarket array to MarketData with real-time prices
+ */
+export async function gammaMarketsToMarketData(markets: GammaMarket[]): Promise<MarketData[]> {
+  if (markets.length === 0) return [];
+  const tokenIdMap = new Map<string, string>();
+  const allTokenIds: string[] = [];
+  markets.forEach((market) => {
+    const tokenIds = parseTokenIds(market.clobTokenIds);
+    if (tokenIds.length > 0) {
+      tokenIdMap.set(market.id, tokenIds[0]);
+      allTokenIds.push(tokenIds[0]);
+    }
+  });
+  const prices = await getBatchPrices(allTokenIds);
+  return markets.map((market) => {
+    const yesTokenId = tokenIdMap.get(market.id);
+    const price = yesTokenId ? prices[yesTokenId] || 0 : 0;
+    const volumeNum = typeof market.volume === "string" ? parseFloat(market.volume) : (market.volume || 0);
+    let outcomes: string[] = ["Yes", "No"];
+    if (market.outcomes) {
+      try {
+        const parsed = JSON.parse(market.outcomes);
+        if (Array.isArray(parsed)) outcomes = parsed;
+      } catch (_) {}
+    }
+    return {
+      id: market.id,
+      title: market.question,
+      outcome: outcomes[0] || "Yes",
+      probability: Math.round(price * 10000) / 100,
+      volume: formatVolume(volumeNum),
+      chartData: [],
+      image: market.image || undefined,
+      slug: market.eventSlug || market.slug,
+      outcomes,
+      eventId: market.eventId,
+      eventTitle: market.eventTitle,
+    };
+  });
+}
+
+/**
  * 主编排函数
  * 整合所有 API 调用，转换为前端可用的 MarketData 格式
  */
