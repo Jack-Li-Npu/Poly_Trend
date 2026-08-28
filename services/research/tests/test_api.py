@@ -24,6 +24,8 @@ def test_investigation_lifecycle() -> None:
         assert run["answer"]["probability"] is not None
         assert run["relationships"]
         assert len(run["events"]) == 8
+        synthesis_trace = next(trace for trace in run["traces"] if trace["node"] == "synthesis")
+        assert synthesis_trace["provider"] == "deterministic"
 
 
 def test_health_and_mcp_tools() -> None:

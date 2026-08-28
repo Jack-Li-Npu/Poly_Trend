@@ -64,6 +64,8 @@ class ResearchEngine:
             nonlocal sequence
             started = datetime.now(timezone.utc)
             update = await operation()
+            trace_provider = str(update.pop("_trace_provider", "deterministic"))
+            trace_cost = float(update.pop("_trace_estimated_cost_usd", 0))
             completed = datetime.now(timezone.utc)
             sequence += 1
             duration = max(1, int((completed - started).total_seconds() * 1000))
@@ -72,6 +74,7 @@ class ResearchEngine:
             run.traces.append(TraceSpan(
                 node=node, started_at=started, completed_at=completed, duration_ms=duration,
                 input_count=len(run.markets), output_count=len(update.get("markets", update.get("relationships", update.get("context", [])))),
+                provider=trace_provider, estimated_cost_usd=trace_cost,
             ))
             await emit(event)
             return update
@@ -124,7 +127,11 @@ class ResearchEngine:
                 result = await self.model_router.refine_takeaways(run.query, answer, state["markets"], run.deep_mode)
                 answer.takeaways = result.takeaways
                 answer.provider_freshness["synthesis"] = f"{result.provider}:{result.model}"
-                return {"answer": answer}
+                return {
+                    "answer": answer,
+                    "_trace_provider": result.provider,
+                    "_trace_estimated_cost_usd": result.estimated_cost_usd,
+                }
             return await record("synthesis", operation)
 
         async def verify_node(state: ResearchState) -> dict[str, Any]:
