@@ -1,0 +1,17 @@
+.git
+.github
+.next
+**/.next
+node_modules
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+coverage
+**/coverage
+.env
+.env.local
+*.log
+search-results
+polymarket_python.ipynb

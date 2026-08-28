@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "polytrend-research": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp",
+      "headers": {
+        "X-PolyTrend-Client": "project-local-mcp"
+      }
+    }
+  }
+}

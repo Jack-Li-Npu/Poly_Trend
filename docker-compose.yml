@@ -1,0 +1,148 @@
+name: ${COMPOSE_PROJECT_NAME:-polytrend-v2}
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      NEXT_PUBLIC_RESEARCH_API_URL: ${NEXT_PUBLIC_RESEARCH_API_URL:-http://localhost:8000}
+      INTERNAL_API_URL: http://api:8000
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/research.Dockerfile
+    command:
+      [
+        "uvicorn",
+        "polytrend.api:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--proxy-headers",
+      ]
+    environment: &research-environment
+      APP_ENV: production
+      DATABASE_URL: postgresql://polytrend:${POSTGRES_PASSWORD:-polytrend_dev_only}@postgres:5432/${POSTGRES_DB:-polytrend}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-polytrend_dev_only}@redis:6379/0
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.6-terra}
+      OPENAI_DEEP_MODEL: ${OPENAI_DEEP_MODEL:-gpt-5.6-sol}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.7-flash}
+      POLYMARKET_GAMMA_URL: ${POLYMARKET_GAMMA_URL:-https://gamma-api.polymarket.com}
+      POLYMARKET_CLOB_URL: ${POLYMARKET_CLOB_URL:-https://clob.polymarket.com}
+      CORS_ORIGINS: http://localhost:${WEB_PORT:-3000}
+      TZ: Asia/Shanghai
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - research_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+
+  worker:
+    build:
+      context: .
+      dockerfile: infra/docker/research.Dockerfile
+    command: ["python", "-m", "polytrend.worker"]
+    environment:
+      <<: *research-environment
+      DAILY_REFRESH_TIME: ${DAILY_REFRESH_TIME:-08:00}
+      DAILY_REFRESH_TIMEZONE: ${DAILY_REFRESH_TIMEZONE:-Asia/Shanghai}
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - research_data:/app/data
+    restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-polytrend}
+      POSTGRES_USER: ${POSTGRES_USER:-polytrend}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-polytrend_dev_only}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/001-polytrend.sql:ro
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-polytrend} -d ${POSTGRES_DB:-polytrend}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--requirepass",
+        "${REDIS_PASSWORD:-polytrend_dev_only}",
+      ]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "redis-cli -a '${REDIS_PASSWORD:-polytrend_dev_only}' ping | grep PONG",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  redis_data:
+  research_data:

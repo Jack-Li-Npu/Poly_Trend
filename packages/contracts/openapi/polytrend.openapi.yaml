@@ -1,0 +1,471 @@
+openapi: 3.1.0
+info:
+  title: Poly Trend Research API
+  version: 2.0.0
+  summary: Saved, replayable prediction-market investigations.
+  description: >-
+    Public application contract for the Poly Trend V2 research runtime. Numerical
+    answers are market-implied estimates and always carry provenance, coverage,
+    freshness, exclusions, and caveats.
+servers:
+  - url: http://localhost:8000
+    description: Local research service
+tags:
+  - name: Investigations
+  - name: Runs
+  - name: Markets
+  - name: Operations
+paths:
+  /api/v1/investigations:
+    post:
+      operationId: createInvestigation
+      tags: [Investigations]
+      summary: Save a research question
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InvestigationCreate" }
+      responses:
+        "201":
+          description: Investigation created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Investigation" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /api/v1/investigations/{id}:
+    parameters:
+      - $ref: "#/components/parameters/InvestigationId"
+    get:
+      operationId: getInvestigation
+      tags: [Investigations]
+      summary: Get a saved investigation
+      responses:
+        "200":
+          description: Investigation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Investigation" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateInvestigation
+      tags: [Investigations]
+      summary: Change refresh, depth, or archive settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InvestigationPatch" }
+      responses:
+        "200":
+          description: Updated investigation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Investigation" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/investigations/{id}/runs:
+    parameters:
+      - $ref: "#/components/parameters/InvestigationId"
+    post:
+      operationId: createRun
+      tags: [Runs]
+      summary: Run or refresh an investigation
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RunCreate" }
+      responses:
+        "202":
+          description: Research run accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResearchRun" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/runs/{id}:
+    parameters:
+      - $ref: "#/components/parameters/RunId"
+    get:
+      operationId: getRun
+      tags: [Runs]
+      summary: Read one run, its result, trace summary, and diff
+      responses:
+        "200":
+          description: Run snapshot
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResearchRun" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/runs/{id}/events:
+    parameters:
+      - $ref: "#/components/parameters/RunId"
+      - name: after
+        in: query
+        required: false
+        description: Last received sequence number for reconnects.
+        schema: { type: integer, minimum: 0, default: 0 }
+    get:
+      operationId: streamRunEvents
+      tags: [Runs]
+      summary: Stream typed progress events
+      responses:
+        "200":
+          description: >-
+            Server-sent event stream. Each data field contains a RunEvent JSON
+            object; the stream closes after a terminal run event.
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-cache }
+          content:
+            text/event-stream:
+              schema: { type: string }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/runs/{id}/fork:
+    parameters:
+      - $ref: "#/components/parameters/RunId"
+    post:
+      operationId: forkRun
+      tags: [Runs]
+      summary: Replay from a checkpoint with revised market inclusion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ForkCreate" }
+      responses:
+        "202":
+          description: Forked run accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResearchRun" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/markets/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getMarket
+      tags: [Markets]
+      summary: Read an enriched market snapshot
+      responses:
+        "200":
+          description: Market snapshot
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MarketSnapshot" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/providers/health:
+    get:
+      operationId: getProviderHealth
+      tags: [Operations]
+      summary: Inspect data and reasoning provider health
+      responses:
+        "200":
+          description: Provider health, including deterministic fallback mode
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProviderHealth" }
+components:
+  parameters:
+    InvestigationId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    RunId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    ValidationError:
+      description: Invalid input
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+  schemas:
+    RelationType:
+      type: string
+      enum:
+        - direct
+        - duplicate
+        - complement
+        - supporting_proxy
+        - conflicting_proxy
+        - measured_correlation
+        - external_context
+    CoverageState:
+      type: string
+      enum: [good, limited, insufficient]
+    QueryIntent:
+      type: object
+      required: [proposition]
+      properties:
+        proposition: { type: string }
+        entities:
+          type: array
+          items: { type: string }
+          default: []
+        geography: { type: [string, "null"] }
+        horizon: { type: [string, "null"] }
+        target_year: { type: [integer, "null"] }
+        outcome: { type: string, default: yes }
+        ambiguous: { type: boolean, default: false }
+    PricePoint:
+      type: object
+      required: [timestamp, probability]
+      properties:
+        timestamp: { type: string, format: date-time }
+        probability: { type: number, minimum: 0, maximum: 1 }
+    MarketSnapshot:
+      type: object
+      required: [id, question, slug, probability, url]
+      properties:
+        id: { type: string }
+        question: { type: string }
+        slug: { type: string }
+        event_id: { type: [string, "null"] }
+        event_title: { type: [string, "null"] }
+        clob_token_id: { type: [string, "null"] }
+        probability: { type: number, minimum: 0, maximum: 1 }
+        probability_change_24h: { type: number, default: 0 }
+        volume_24h: { type: number, minimum: 0, default: 0 }
+        volume_total: { type: number, minimum: 0, default: 0 }
+        liquidity: { type: number, minimum: 0, default: 0 }
+        open_interest: { type: number, minimum: 0, default: 0 }
+        best_bid: { type: [number, "null"], minimum: 0, maximum: 1 }
+        best_ask: { type: [number, "null"], minimum: 0, maximum: 1 }
+        spread: { type: [number, "null"], minimum: 0, maximum: 1 }
+        end_date: { type: [string, "null"], format: date-time }
+        resolution_criteria: { type: string, default: "" }
+        resolution_source: { type: [string, "null"], format: uri }
+        url: { type: string, format: uri }
+        tags:
+          type: array
+          items: { type: string }
+          default: []
+        retrieval_sources:
+          type: array
+          items: { type: string }
+          default: []
+        relevance: { type: number, minimum: 0, maximum: 1, default: 0 }
+        relation_type: { $ref: "#/components/schemas/RelationType" }
+        relation_confidence: { type: number, minimum: 0, maximum: 1, default: 0.5 }
+        relation_reason: { type: string, default: "" }
+        included: { type: boolean, default: true }
+        quality: { type: number, minimum: 0, maximum: 1, default: 0.5 }
+        freshness: { type: string, default: live }
+        history:
+          type: array
+          items: { $ref: "#/components/schemas/PricePoint" }
+          default: []
+    RelationshipEdge:
+      type: object
+      required: [id, source_id, target_id, relation_type, confidence, explanation]
+      properties:
+        id: { type: string, format: uuid }
+        source_id: { type: string }
+        target_id: { type: string }
+        relation_type: { $ref: "#/components/schemas/RelationType" }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        explanation: { type: string }
+        measured_correlation: { type: [number, "null"], minimum: -1, maximum: 1 }
+        observation_count: { type: [integer, "null"], minimum: 0 }
+    EvidenceItem:
+      type: object
+      required: [id, kind, title, source]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string }
+        title: { type: string }
+        source: { type: string }
+        url: { type: [string, "null"], format: uri }
+        published_at: { type: [string, "null"], format: date-time }
+        summary: { type: string, default: "" }
+        supports_numeric_answer: { type: boolean, default: false }
+    MarketImpliedAnswer:
+      type: object
+      required: [conclusion, label, agreement, coverage, methodology, as_of]
+      properties:
+        conclusion: { type: string }
+        label: { type: string }
+        probability: { type: [number, "null"], minimum: 0, maximum: 1 }
+        market_range:
+          oneOf:
+            - type: array
+              prefixItems:
+                - { type: number, minimum: 0, maximum: 1 }
+                - { type: number, minimum: 0, maximum: 1 }
+              minItems: 2
+              maxItems: 2
+            - type: "null"
+        agreement: { type: number, minimum: 0, maximum: 1 }
+        coverage: { $ref: "#/components/schemas/CoverageState" }
+        takeaways:
+          type: array
+          maxItems: 3
+          items: { type: string }
+        evidence_ids:
+          type: array
+          items: { type: string }
+        excluded_market_ids:
+          type: array
+          items: { type: string }
+        methodology: { type: string }
+        caveats:
+          type: array
+          items: { type: string }
+        as_of: { type: string, format: date-time }
+        provider_freshness:
+          type: object
+          additionalProperties: { type: string }
+    RunEvent:
+      type: object
+      required: [sequence, stage, label, timestamp]
+      properties:
+        sequence: { type: integer, minimum: 1 }
+        stage: { type: string }
+        label: { type: string }
+        status: { type: string, default: completed }
+        timestamp: { type: string, format: date-time }
+        duration_ms: { type: [integer, "null"], minimum: 0 }
+        details:
+          type: object
+          additionalProperties: true
+    TraceSpan:
+      type: object
+      required: [node, started_at, completed_at, duration_ms]
+      properties:
+        node: { type: string }
+        started_at: { type: string, format: date-time }
+        completed_at: { type: string, format: date-time }
+        duration_ms: { type: integer, minimum: 0 }
+        input_count: { type: integer, minimum: 0, default: 0 }
+        output_count: { type: integer, minimum: 0, default: 0 }
+        provider: { type: string, default: deterministic }
+        cached: { type: boolean, default: false }
+        estimated_cost_usd: { type: number, minimum: 0, default: 0 }
+    RunDiff:
+      type: object
+      properties:
+        prior_run_id: { type: [string, "null"], format: uuid }
+        probability_change: { type: [number, "null"] }
+        added_market_ids:
+          type: array
+          items: { type: string }
+        removed_market_ids:
+          type: array
+          items: { type: string }
+        changed_evidence_count: { type: integer, minimum: 0, default: 0 }
+    ResearchRun:
+      type: object
+      required: [id, investigation_id, query, status, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        investigation_id: { type: string, format: uuid }
+        query: { type: string }
+        status:
+          type: string
+          enum: [queued, running, completed, failed]
+        deep_mode: { type: boolean, default: false }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        intent:
+          oneOf:
+            - { $ref: "#/components/schemas/QueryIntent" }
+            - { type: "null" }
+        markets:
+          type: array
+          items: { $ref: "#/components/schemas/MarketSnapshot" }
+        relationships:
+          type: array
+          items: { $ref: "#/components/schemas/RelationshipEdge" }
+        context:
+          type: array
+          items: { $ref: "#/components/schemas/EvidenceItem" }
+        answer:
+          oneOf:
+            - { $ref: "#/components/schemas/MarketImpliedAnswer" }
+            - { type: "null" }
+        events:
+          type: array
+          items: { $ref: "#/components/schemas/RunEvent" }
+        traces:
+          type: array
+          items: { $ref: "#/components/schemas/TraceSpan" }
+        diff:
+          oneOf:
+            - { $ref: "#/components/schemas/RunDiff" }
+            - { type: "null" }
+        error: { type: [string, "null"] }
+    Investigation:
+      type: object
+      required: [id, query, refresh_policy, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        query: { type: string, minLength: 4, maxLength: 500 }
+        refresh_policy: { type: string, enum: [manual, daily] }
+        deep_mode: { type: boolean, default: false }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        latest_run_id: { type: [string, "null"], format: uuid }
+        run_ids:
+          type: array
+          items: { type: string, format: uuid }
+        next_refresh_at: { type: [string, "null"], format: date-time }
+        archived: { type: boolean, default: false }
+    InvestigationCreate:
+      type: object
+      required: [query]
+      properties:
+        query: { type: string, minLength: 4, maxLength: 500 }
+        refresh_policy: { type: string, enum: [manual, daily], default: manual }
+        deep_mode: { type: boolean, default: false }
+    InvestigationPatch:
+      type: object
+      minProperties: 1
+      properties:
+        refresh_policy: { type: string, enum: [manual, daily] }
+        deep_mode: { type: boolean }
+        archived: { type: boolean }
+    RunCreate:
+      type: object
+      properties:
+        included_market_ids:
+          type: [array, "null"]
+          items: { type: string }
+    ForkCreate:
+      type: object
+      required: [included_market_ids]
+      properties:
+        included_market_ids:
+          type: array
+          minItems: 1
+          items: { type: string }
+    ProviderHealth:
+      type: object
+      required: [status, providers]
+      properties:
+        status: { type: string }
+        providers:
+          type: object
+          additionalProperties:
+            type: object
+            required: [status]
+            properties:
+              status: { type: string }
+              latency_ms: { type: integer, minimum: 0 }
+              detail: { type: string }
+    ApiError:
+      type: object
+      required: [detail]
+      properties:
+        detail: { type: string }
+        code: { type: string }

@@ -1,0 +1,35 @@
+name: Poly Trend V2 CI
+
+on:
+  push:
+    branches: [main, codex/v2-agent-rebuild]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      POLYTREND_LIVE_MARKET_DATA: "false"
+      POLYTREND_SQLITE_PATH: /tmp/polytrend-ci.db
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: npm ci --no-audit --no-fund
+      - run: python -m pip install -e "services/research[test]"
+      - run: npm run typecheck
+      - run: npm run build
+      - run: python -m pytest services/research/tests
+      - run: python -m pytest evals/retrieval/test_evaluator.py
+      - run: python evals/retrieval/validate_dataset.py
+      - run: python evals/retrieval/evaluate.py

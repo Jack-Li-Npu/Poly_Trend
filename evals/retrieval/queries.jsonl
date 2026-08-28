@@ -1,0 +1,50 @@
+{"id":"q001","query":"Will the U.S. enter a recession before the end of 2027?","relevant_market_ids":["recession-2027","recession-in-2027","recession-before-2028","no-recession-before-2028"],"category":"direct_horizon"}
+{"id":"q002","query":"What probability do markets assign to a United States recession by 2027?","relevant_market_ids":["recession-2027","recession-in-2027","recession-before-2028"],"category":"direct_horizon"}
+{"id":"q003","query":"Could America be in recession before January 2028?","relevant_market_ids":["recession-2027","recession-before-2028"],"category":"direct_horizon"}
+{"id":"q004","query":"Market odds of a US recession during 2027","relevant_market_ids":["recession-in-2027","recession-2027"],"category":"direct_horizon"}
+{"id":"q005","query":"Will NBER date a recession start before 2028?","relevant_market_ids":["recession-2027","recession-before-2028"],"category":"resolution_wording"}
+{"id":"q006","query":"Chance the U.S. avoids recession through 2027","relevant_market_ids":["no-recession-before-2028","recession-2027"],"category":"inverse_outcome"}
+{"id":"q007","query":"No American recession before the end of 2027?","relevant_market_ids":["no-recession-before-2028","recession-2027"],"category":"inverse_outcome"}
+{"id":"q008","query":"US downturn officially classified as recession by December 2027","relevant_market_ids":["recession-2027","recession-in-2027"],"category":"resolution_wording"}
+{"id":"q009","query":"How are prediction markets pricing 2027 recession risk?","relevant_market_ids":["recession-2027","recession-in-2027"],"category":"direct_horizon"}
+{"id":"q010","query":"Recession in the United States sometime before 2028","relevant_market_ids":["recession-2027","recession-before-2028"],"category":"direct_horizon"}
+{"id":"q011","query":"Does the market expect a recession next year in 2027?","relevant_market_ids":["recession-in-2027","recession-2027"],"category":"direct_horizon"}
+{"id":"q012","query":"Probability of avoiding a 2027 recession in America","relevant_market_ids":["no-recession-before-2028","recession-in-2027"],"category":"inverse_outcome"}
+{"id":"q013","query":"Will the U.S. enter recession before December 31 2026?","relevant_market_ids":["recession-2026"],"category":"earlier_horizon"}
+{"id":"q014","query":"United States recession odds by year end 2026","relevant_market_ids":["recession-2026"],"category":"earlier_horizon"}
+{"id":"q015","query":"Will America be in a recession during 2026?","relevant_market_ids":["recession-2026"],"category":"earlier_horizon"}
+{"id":"q016","query":"Market price for a US recession before 2027 begins","relevant_market_ids":["recession-2026"],"category":"earlier_horizon"}
+{"id":"q017","query":"NBER recession call by the close of 2026","relevant_market_ids":["recession-2026"],"category":"earlier_horizon"}
+{"id":"q018","query":"Near-term US recession probability in 2026","relevant_market_ids":["recession-2026"],"category":"earlier_horizon"}
+{"id":"q019","query":"Could a downturn start in the United States before 2026 ends?","relevant_market_ids":["recession-2026"],"category":"earlier_horizon"}
+{"id":"q020","query":"Prediction-market recession risk through December 2026","relevant_market_ids":["recession-2026"],"category":"earlier_horizon"}
+{"id":"q021","query":"Will the 10 year 2 year yield curve be negative at the end of 2026?","relevant_market_ids":["yield-curve-negative"],"category":"supporting_proxy"}
+{"id":"q022","query":"Odds of a negative 10Y minus 2Y Treasury spread on December 31 2026","relevant_market_ids":["yield-curve-negative"],"category":"supporting_proxy"}
+{"id":"q023","query":"Will the US yield curve invert again in 2026?","relevant_market_ids":["yield-curve-negative"],"category":"supporting_proxy"}
+{"id":"q024","query":"Prediction market for the 10Y 2Y yield curve","relevant_market_ids":["yield-curve-negative"],"category":"supporting_proxy"}
+{"id":"q025","query":"Treasury curve negative at year end 2026","relevant_market_ids":["yield-curve-negative"],"category":"supporting_proxy"}
+{"id":"q026","query":"How likely is another bond yield curve inversion?","relevant_market_ids":["yield-curve-negative"],"category":"supporting_proxy"}
+{"id":"q027","query":"Will real US GDP growth be negative in a quarter of 2026?","relevant_market_ids":["real-gdp-negative"],"category":"supporting_proxy"}
+{"id":"q028","query":"Probability of a negative GDP quarter in 2026","relevant_market_ids":["real-gdp-negative"],"category":"supporting_proxy"}
+{"id":"q029","query":"Could United States real output contract during 2026?","relevant_market_ids":["real-gdp-negative"],"category":"supporting_proxy"}
+{"id":"q030","query":"Market odds for quarterly US GDP below zero","relevant_market_ids":["real-gdp-negative"],"category":"supporting_proxy"}
+{"id":"q031","query":"A quarter of economic contraction before 2027","relevant_market_ids":["real-gdp-negative"],"category":"supporting_proxy"}
+{"id":"q032","query":"Will 2026 include negative real GDP growth?","relevant_market_ids":["real-gdp-negative"],"category":"supporting_proxy"}
+{"id":"q033","query":"Will the Federal Reserve cut at least 75 basis points in 2026?","relevant_market_ids":["fed-75bps"],"category":"conflicting_proxy"}
+{"id":"q034","query":"Odds of 75 bps or more in Fed cuts before year end 2026","relevant_market_ids":["fed-75bps"],"category":"conflicting_proxy"}
+{"id":"q035","query":"How much easing will the Fed deliver in 2026?","relevant_market_ids":["fed-75bps"],"category":"conflicting_proxy"}
+{"id":"q036","query":"Prediction market for three quarter point of rate cuts","relevant_market_ids":["fed-75bps"],"category":"conflicting_proxy"}
+{"id":"q037","query":"Will US policy rates fall by at least 0.75 percentage points?","relevant_market_ids":["fed-75bps"],"category":"conflicting_proxy"}
+{"id":"q038","query":"Federal Reserve easing of 75bp by December 2026","relevant_market_ids":["fed-75bps"],"category":"conflicting_proxy"}
+{"id":"q039","query":"Will the S&P 500 make a new all time high in 2026?","relevant_market_ids":["sp500-ath"],"category":"conflicting_proxy"}
+{"id":"q040","query":"Odds US stocks reach another record high this year","relevant_market_ids":["sp500-ath"],"category":"conflicting_proxy"}
+{"id":"q041","query":"Prediction market for an S&P 500 record in 2026","relevant_market_ids":["sp500-ath"],"category":"conflicting_proxy"}
+{"id":"q042","query":"Can the American equity index set a fresh all-time high?","relevant_market_ids":["sp500-ath"],"category":"conflicting_proxy"}
+{"id":"q043","query":"Will US large cap stocks exceed their previous peak during 2026?","relevant_market_ids":["sp500-ath"],"category":"conflicting_proxy"}
+{"id":"q044","query":"Market probability of a new stock market record in 2026","relevant_market_ids":["sp500-ath"],"category":"conflicting_proxy"}
+{"id":"q045","query":"Will core PCE inflation fall below 2.5 percent by the end of 2026?","relevant_market_ids":["core-pce"],"category":"conflicting_proxy"}
+{"id":"q046","query":"Odds underlying PCE is under 2.5% in December 2026","relevant_market_ids":["core-pce"],"category":"conflicting_proxy"}
+{"id":"q047","query":"Prediction market for core personal consumption inflation below 2.5","relevant_market_ids":["core-pce"],"category":"conflicting_proxy"}
+{"id":"q048","query":"Will US core PCE disinflation reach 2.5 percent?","relevant_market_ids":["core-pce"],"category":"conflicting_proxy"}
+{"id":"q049","query":"Core inflation threshold at year end 2026","relevant_market_ids":["core-pce"],"category":"conflicting_proxy"}
+{"id":"q050","query":"Market odds core PCE cools below two and a half percent","relevant_market_ids":["core-pce"],"category":"conflicting_proxy"}

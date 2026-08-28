@@ -1,45 +1,27 @@
 {
-  "name": "polymacro-insight",
-  "version": "0.1.0",
+  "name": "poly-trend-v2",
+  "version": "2.0.0",
   "private": true,
+  "description": "Prediction-market intelligence terminal with a durable agent research runtime.",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "workspaces": [
+    "apps/web",
+    "packages/contracts"
+  ],
   "scripts": {
-    "dev": "lsof -ti:3000 2>/dev/null | xargs kill -9 2>/dev/null || true; PORT=3000 next dev",
-    "build": "next build",
-    "start": "PORT=3000 next start",
-    "lint": "next lint",
-    "init-data": "ts-node scripts/init-categorize.ts"
-  },
-  "dependencies": {
-    "@google/genai": "^1.35.0",
-    "@google/generative-ai": "^0.24.1",
-    "@tabler/icons-react": "^3.36.1",
-    "@types/node-fetch": "^2.6.13",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "framer-motion": "^11.0.0",
-    "global-agent": "^3.0.0",
-    "https-proxy-agent": "^7.0.6",
-    "lucide-react": "^0.400.0",
-    "mime": "^4.1.0",
-    "motion": "^12.25.0",
-    "next": "^14.0.0",
-    "node-fetch": "^2.7.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7"
-  },
-  "devDependencies": {
-    "@types/node": "^20.19.28",
-    "@types/react": "^18.2.46",
-    "@types/react-dom": "^18.2.18",
-    "autoprefixer": "^10.4.16",
-    "dotenv": "^17.2.3",
-    "eslint": "^8.56.0",
-    "eslint-config-next": "^14.0.4",
-    "postcss": "^8.4.32",
-    "tailwindcss": "^3.4.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "dev": "npm run dev --workspace @polytrend/web",
+    "build": "npm run build --workspace @polytrend/contracts && npm run build --workspace @polytrend/web",
+    "lint": "npm run lint --workspace @polytrend/web",
+    "typecheck": "npm run typecheck --workspace @polytrend/contracts && npm run typecheck --workspace @polytrend/web",
+    "test": "npm run test --workspace @polytrend/web",
+    "contracts:generate": "npm run generate --workspace @polytrend/contracts",
+    "contracts:check": "npm run typecheck --workspace @polytrend/contracts",
+    "eval:validate": "python evals/retrieval/validate_dataset.py",
+    "eval:retrieval": "python evals/retrieval/evaluate.py",
+    "stack:up": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1",
+    "stack:health": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/health.ps1",
+    "stack:down": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/stop.ps1"
   }
 }

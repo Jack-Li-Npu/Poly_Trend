@@ -2,6 +2,12 @@
 
 # dependencies
 /node_modules
+**/node_modules
+/.venv
+.pytest_cache
+**/.pytest_cache
+__pycache__
+*.py[cod]
 /.pnp
 .pnp.js
 .yarn/install-state.gz
@@ -11,6 +17,7 @@
 
 # next.js
 /.next/
+**/.next/
 /out/
 
 # production
@@ -38,3 +45,8 @@ next-env.d.ts
 
 # search results
 /search-results
+
+# local durable runtime data
+/data
+services/research/data
+.polytrend-local-pids.json

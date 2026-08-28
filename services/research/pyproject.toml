@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "polytrend-research"
+version = "0.2.0"
+description = "Stateful market-intelligence research service for Poly Trend V2"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = [
+  "fastapi>=0.141,<1",
+  "httpx>=0.28,<1",
+  "langgraph>=1.2,<2",
+  "pydantic>=2.13,<3",
+  "uvicorn[standard]>=0.52,<1",
+]
+
+[project.optional-dependencies]
+postgres = ["psycopg[binary,pool]>=3.3,<4"]
+redis = ["redis>=7.1,<8"]
+test = ["pytest>=8.4,<9", "pytest-asyncio>=1.2,<2"]
+dev = ["polytrend-research[postgres,redis,test]", "ruff>=0.14,<1"]
+
+[project.scripts]
+polytrend-research = "polytrend.api:serve"
+polytrend-refresh = "polytrend.worker:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/polytrend"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+asyncio_mode = "auto"
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Poly Trend Research"
+  short_description: "Verified prediction-market investigations"
+  default_prompt: "Use $polytrend-research to answer this measurable question with stored market evidence and clearly separated proxy context."
