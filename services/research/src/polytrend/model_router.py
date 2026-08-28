@@ -44,7 +44,7 @@ class ModelRouter:
                 result = await self._openai(prompt, openai_key, model)
                 self.last_provider, self.last_error = "openai", None
                 return result
-            except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+            except (httpx.HTTPError, ValueError, KeyError, TypeError, IndexError) as exc:
                 self.last_error = f"OpenAI: {type(exc).__name__}: {exc}"
         gemini_key = os.getenv("GEMINI_API_KEY")
         if gemini_key:
@@ -52,7 +52,7 @@ class ModelRouter:
                 result = await self._gemini(prompt, gemini_key, self.config.gemini_model)
                 self.last_provider, self.last_error = "gemini", None
                 return result
-            except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+            except (httpx.HTTPError, ValueError, KeyError, TypeError, IndexError) as exc:
                 self.last_error = f"Gemini: {type(exc).__name__}: {exc}"
         self.last_provider = "deterministic"
         return ModelResult(takeaways=answer.takeaways[:3], provider="deterministic", model="template-v2")
@@ -94,23 +94,42 @@ class ModelRouter:
                     raise
         raise RuntimeError("OpenAI-compatible endpoint did not return a usable response") from first_error
 
-    def _openai_url(self, route: str) -> str:
+    def _openai_urls(self, route: str) -> list[str]:
         base = self.config.openai_base_url.rstrip("/")
-        versioned_base = base if base.endswith("/v1") else f"{base}/v1"
-        return f"{versioned_base}/{route.lstrip('/')}"
+        route = route.lstrip("/")
+        if base.endswith("/v1"):
+            return [f"{base}/{route}"]
+        if base == "https://api.openai.com":
+            return [f"{base}/v1/{route}"]
+        # Codex-oriented gateways commonly expose /responses at the root, while
+        # general OpenAI-compatible gateways often retain the /v1 prefix.
+        return [f"{base}/{route}", f"{base}/v1/{route}"]
+
+    async def _openai_post(
+        self,
+        route: str,
+        key: str,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        urls = self._openai_urls(route)
+        async with httpx.AsyncClient(timeout=20) as client:
+            for index, url in enumerate(urls):
+                response = await client.post(
+                    url,
+                    headers={"Authorization": f"Bearer {key}"},
+                    json=payload,
+                )
+                if response.status_code in {404, 405} and index < len(urls) - 1:
+                    continue
+                response.raise_for_status()
+                return response.json()
+        raise RuntimeError("OpenAI-compatible endpoint did not return a response")
 
     async def _openai_responses(self, prompt: str, key: str, model: str) -> ModelResult:
-        async with httpx.AsyncClient(timeout=20) as client:
-            response = await client.post(
-                self._openai_url("responses"),
-                headers={"Authorization": f"Bearer {key}"},
-                json={"model": model, "input": prompt},
-            )
-            response.raise_for_status()
-            payload = response.json()
-        text = payload.get("output_text")
-        if not text:
-            text = payload["output"][0]["content"][0]["text"]
+        payload = await self._openai_post(
+            "responses", key, {"model": model, "input": prompt}
+        )
+        text = self._responses_text(payload)
         takeaways = self._takeaways(text)
         usage = payload.get("usage", {})
         return ModelResult(
@@ -119,23 +138,20 @@ class ModelRouter:
         )
 
     async def _openai_chat_completions(self, prompt: str, key: str, model: str) -> ModelResult:
-        async with httpx.AsyncClient(timeout=20) as client:
-            response = await client.post(
-                self._openai_url("chat/completions"),
-                headers={"Authorization": f"Bearer {key}"},
-                json={
-                    "model": model,
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": "Return only the requested JSON. Never invent evidence.",
-                        },
-                        {"role": "user", "content": prompt},
-                    ],
-                },
-            )
-            response.raise_for_status()
-            payload = response.json()
+        payload = await self._openai_post(
+            "chat/completions",
+            key,
+            {
+                "model": model,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Return only the requested JSON. Never invent evidence.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+            },
+        )
         text = payload["choices"][0]["message"]["content"]
         usage = payload.get("usage", {})
         return ModelResult(
@@ -161,6 +177,22 @@ class ModelRouter:
             takeaways=self._takeaways(text), provider="gemini", model=model,
             input_tokens=int(usage.get("promptTokenCount", 0)), output_tokens=int(usage.get("candidatesTokenCount", 0)),
         )
+
+    @staticmethod
+    def _responses_text(payload: dict[str, Any]) -> str:
+        output_text = payload.get("output_text")
+        if isinstance(output_text, str) and output_text.strip():
+            return output_text
+        for item in payload.get("output", []):
+            if not isinstance(item, dict):
+                continue
+            for content in item.get("content", []):
+                if not isinstance(content, dict):
+                    continue
+                text = content.get("text")
+                if content.get("type") == "output_text" and isinstance(text, str) and text.strip():
+                    return text
+        raise ValueError("Responses API payload did not contain output text")
 
     @staticmethod
     def _takeaways(text: str) -> list[str]:

@@ -42,7 +42,7 @@ OPENAI_API_MODE=auto
 OPENAI_MODEL=replace_with_a_model_id_supported_by_your_exchange
 ```
 
-`OPENAI_BASE_URL` accepts either a host such as `https://api.3366.ai` or a versioned base such as `https://api.3366.ai/v1`. In `auto` mode, Poly Trend first tries the Responses API and then the widely supported Chat Completions API. Never place the key in `NEXT_PUBLIC_*`, frontend code, or browser storage.
+`OPENAI_BASE_URL` accepts either a host such as `https://api.3366.ai` or a versioned base such as `https://api.3366.ai/v1`. For a custom host, Poly Trend supports both root-style routes (`/responses`) and standard versioned routes (`/v1/responses`). In `auto` mode, it tries the Responses API and then Chat Completions. Never place the key in `NEXT_PUBLIC_*`, frontend code, or browser storage.
 
 Restart the API and worker after editing `.env`. For the Windows local stack, run `scripts/stop-local.ps1` and then `scripts/dev-local.ps1`. For Docker, recreate the services with `docker compose up --build --force-recreate`.
 
