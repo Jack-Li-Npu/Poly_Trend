@@ -192,7 +192,14 @@ export function ProbabilityWorkspace() {
   const [focusMode, setFocusMode] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const answer = useMemo(() => recomputeAnswer(markets), [markets]);
+  const answer = useMemo(() => {
+    const inclusionChanged = markets.some((market) => {
+      const original = run.markets.find((candidate) => candidate.id === market.id);
+      return original?.included !== market.included;
+    });
+    return inclusionChanged ? recomputeAnswer(markets) : run.answer ?? recomputeAnswer(markets);
+  }, [markets, run]);
+  const answerTitle = run.intent?.proposition?.trim() || run.query;
   const selectedMarket = markets.find((market) => market.id === selectedId) ?? markets[0];
   const includedCount = markets.filter((market) => market.included).length;
 
@@ -290,7 +297,7 @@ export function ProbabilityWorkspace() {
         <aside className="answer-rail">
           <div className="answer-main">
             <span className="eyebrow">MARKET-IMPLIED ANSWER</span>
-            <h1>Recession before end of 2027</h1>
+            <h1>{answerTitle}</h1>
             <div className="answer-number"><strong>{percent(answer.probability)}</strong><span>probability</span></div>
             <div className="answer-range"><span>Market range</span><strong>{answer.market_range ? `${percent(answer.market_range[0])} – ${percent(answer.market_range[1])}` : "Not available"}</strong></div>
             <p className="as-of">As of {formatDate(answer.as_of, true)}</p>
@@ -346,6 +353,9 @@ export function ProbabilityWorkspace() {
             onSelect={setSelectedId}
             view={view}
             zoom={zoom}
+            query={run.query}
+            intent={run.intent}
+            answer={answer}
           />
           <div className="map-footer">
             <span>Only direct and logically comparable markets affect the numerical answer.</span>

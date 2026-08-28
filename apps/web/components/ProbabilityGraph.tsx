@@ -2,7 +2,7 @@
 
 import type { KeyboardEvent } from "react";
 
-import type { MarketSnapshot, RelationType, RelationshipEdge, WorkspaceView } from "@/lib/types";
+import type { MarketImpliedAnswer, MarketSnapshot, QueryIntent, RelationType, RelationshipEdge, WorkspaceView } from "@/lib/types";
 
 type ProbabilityGraphProps = {
   markets: MarketSnapshot[];
@@ -11,10 +11,12 @@ type ProbabilityGraphProps = {
   onSelect: (marketId: string) => void;
   view: WorkspaceView;
   zoom: number;
+  query: string;
+  intent?: QueryIntent | null;
+  answer?: MarketImpliedAnswer | null;
 };
 
 const slots = [
-  { x: 380, y: 335, radius: 91 },
   { x: 285, y: 90, radius: 62 },
   { x: 485, y: 90, radius: 62 },
   { x: 90, y: 245, radius: 58 },
@@ -42,14 +44,8 @@ function compactMoney(value: number) {
   return `$${Math.round(value)}`;
 }
 
-function nodeLines(market: MarketSnapshot, central: boolean) {
-  if (central) return ["Will the U.S. enter", "a recession before", "the end of 2027?"];
-  const text = market.question
-    .replace(/^Will (the|there) /i, "")
-    .replace(/\?$/, "")
-    .replace("United States", "U.S.");
-  const words = text.split(" ");
-  const target = market.id === "recession-before-2028" ? 16 : 18;
+function wrappedLines(value: string, target = 20, limit = 4) {
+  const words = value.trim().split(/\s+/);
   const lines: string[] = [];
   let line = "";
   for (const word of words) {
@@ -61,10 +57,19 @@ function nodeLines(market: MarketSnapshot, central: boolean) {
     }
   }
   if (line) lines.push(line);
-  return lines.slice(0, 3);
+  return lines.slice(0, limit);
 }
 
-function RankedList({ markets, selectedId, onSelect }: Omit<ProbabilityGraphProps, "relationships" | "view" | "zoom">) {
+function nodeLines(market: MarketSnapshot) {
+  const text = market.question
+    .replace(/^Will (the|there) /i, "")
+    .replace(/\?$/, "")
+    .replace("United States", "U.S.");
+  const target = market.id === "recession-before-2028" ? 16 : 18;
+  return wrappedLines(text, target, 3);
+}
+
+function RankedList({ markets, selectedId, onSelect }: Pick<ProbabilityGraphProps, "markets" | "selectedId" | "onSelect">) {
   const sorted = [...markets].sort((a, b) => b.relevance - a.relevance);
   return (
     <div className="ranked-list" aria-label="Ranked market evidence">
@@ -102,7 +107,7 @@ function RankedList({ markets, selectedId, onSelect }: Omit<ProbabilityGraphProp
 }
 
 export function ProbabilityGraph(props: ProbabilityGraphProps) {
-  const { markets, relationships, selectedId, onSelect, view, zoom } = props;
+  const { markets, relationships, selectedId, onSelect, view, zoom, query, intent, answer } = props;
   if (view === "list") {
     return <RankedList markets={markets} selectedId={selectedId} onSelect={onSelect} />;
   }
@@ -114,7 +119,9 @@ export function ProbabilityGraph(props: ProbabilityGraphProps) {
     const angle = ((index - slots.length) / Math.max(1, markets.length - slots.length)) * Math.PI * 2;
     return [market.id, { x: 380 + Math.cos(angle) * 300, y: 350 + Math.sin(angle) * 285, radius: 48 }] as const;
   }));
-  const centralId = markets[0]?.id;
+  const queryPosition = { x: 380, y: 350, radius: 91 };
+  const queryLabel = intent?.proposition?.trim() || query.trim() || "Research question";
+  const queryLines = wrappedLines(queryLabel, 22, 4);
   const handleKey = (event: KeyboardEvent<SVGGElement>, id: string) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -132,6 +139,24 @@ export function ProbabilityGraph(props: ProbabilityGraphProps) {
         style={{ transform: `scale(${zoom})` }}
       >
         <g className="graph-edges">
+          {markets.map((market) => {
+            const target = graphPositions.get(market.id);
+            if (!target) return null;
+            const meta = relationMeta[market.relation_type];
+            return (
+              <line
+                key={`query-${market.id}`}
+                x1={queryPosition.x}
+                y1={queryPosition.y}
+                x2={target.x}
+                y2={target.y}
+                stroke={meta.color}
+                strokeWidth="1.35"
+                strokeDasharray={meta.dash}
+                opacity={market.included ? 0.72 : 0.2}
+              />
+            );
+          })}
           {relationships.map((edge) => {
             const source = graphPositions.get(edge.source_id);
             const target = graphPositions.get(edge.target_id);
@@ -171,14 +196,39 @@ export function ProbabilityGraph(props: ProbabilityGraphProps) {
         </g>
 
         <g className="graph-nodes">
+          <g className="query-node" aria-label={`Research query: ${queryLabel}`}>
+            <circle cx={queryPosition.x} cy={queryPosition.y} r={queryPosition.radius + 7} fill="none" stroke="#6236e7" strokeWidth="1.2" opacity="0.18" />
+            <circle cx={queryPosition.x} cy={queryPosition.y} r={queryPosition.radius} fill="#ffffff" stroke="#6236e7" strokeWidth="2.4" />
+            <text x={queryPosition.x} y={queryPosition.y - 50} textAnchor="middle" fill="#6236e7" fontSize="9.5" fontWeight="750" letterSpacing="1.2">
+              RESEARCH QUERY
+            </text>
+            {queryLines.map((line, index) => (
+              <text
+                key={`query-line-${index}`}
+                x={queryPosition.x}
+                y={queryPosition.y - 27 + index * 17}
+                textAnchor="middle"
+                fill="#17131f"
+                fontSize="14"
+                fontWeight="650"
+              >
+                {line}
+              </text>
+            ))}
+            <text x={queryPosition.x} y={queryPosition.y + 52} textAnchor="middle" fill="#6236e7" fontSize="20" fontWeight="750">
+              {answer?.probability == null ? "Evidence map" : `${Math.round(answer.probability * 100)}%`}
+            </text>
+            <text x={queryPosition.x} y={queryPosition.y + 70} textAnchor="middle" fill="#7a7484" fontSize="10.5">
+              {answer?.probability == null ? "No comparable estimate" : "Market-implied answer"}
+            </text>
+          </g>
           {markets.map((market) => {
             const pos = graphPositions.get(market.id);
             if (!pos) return null;
-            const central = market.id === centralId;
             const meta = relationMeta[market.relation_type];
-            const lines = nodeLines(market, central);
+            const lines = nodeLines(market);
             const selected = selectedId === market.id;
-            const top = pos.y - (central ? 28 : Math.min(30, lines.length * 7));
+            const top = pos.y - Math.min(30, lines.length * 7);
             return (
               <g
                 key={market.id}
@@ -198,7 +248,7 @@ export function ProbabilityGraph(props: ProbabilityGraphProps) {
                   r={pos.radius}
                   fill="#ffffff"
                   stroke={meta.color}
-                  strokeWidth={selected ? 2.4 : central ? 2.1 : 1.75}
+                  strokeWidth={selected ? 2.4 : 1.75}
                   strokeDasharray={meta.dash}
                 />
                 {!market.included && <circle cx={pos.x} cy={pos.y} r={pos.radius} fill="#f4f3f7" opacity="0.72" />}
@@ -206,37 +256,37 @@ export function ProbabilityGraph(props: ProbabilityGraphProps) {
                   <text
                     key={`${market.id}-line-${index}`}
                     x={pos.x}
-                    y={top + index * (central ? 18 : 14)}
+                    y={top + index * 14}
                     textAnchor="middle"
                     fill="#17131f"
-                    fontSize={central ? "15" : "11.5"}
-                    fontWeight={central ? "620" : "570"}
+                    fontSize="11.5"
+                    fontWeight="570"
                   >
                     {line}
                   </text>
                 ))}
                 <text
                   x={pos.x}
-                  y={top + lines.length * (central ? 18 : 14) + (central ? 10 : 9)}
+                  y={top + lines.length * 14 + 9}
                   textAnchor="middle"
                   fill={meta.color}
-                  fontSize={central ? "31" : "18"}
+                  fontSize="18"
                   fontWeight="720"
                 >
                   {Math.round(market.probability * 100)}%
                 </text>
                 <text
                   x={pos.x}
-                  y={top + lines.length * (central ? 18 : 14) + (central ? 30 : 25)}
+                  y={top + lines.length * 14 + 25}
                   textAnchor="middle"
                   fill="#7a7484"
-                  fontSize={central ? "11.5" : "10.5"}
+                  fontSize="10.5"
                 >
-                  {central ? "Direct match" : compactMoney(market.liquidity)}
+                  {compactMoney(market.liquidity)}
                 </text>
                 <text
                   x={pos.x}
-                  y={top + lines.length * (central ? 18 : 14) + (central ? 47 : 40)}
+                  y={top + lines.length * 14 + 40}
                   textAnchor="middle"
                   fill={market.probability_change_24h >= 0 ? "#149540" : "#e22b37"}
                   fontSize="10.5"
