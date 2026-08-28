@@ -48,6 +48,8 @@ services:
       DATABASE_URL: postgresql://polytrend:${POSTGRES_PASSWORD:-polytrend_dev_only}@postgres:5432/${POSTGRES_DB:-polytrend}
       REDIS_URL: redis://:${REDIS_PASSWORD:-polytrend_dev_only}@redis:6379/0
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com}
+      OPENAI_API_MODE: ${OPENAI_API_MODE:-auto}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.6-terra}
       OPENAI_DEEP_MODEL: ${OPENAI_DEEP_MODEL:-gpt-5.6-sol}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}

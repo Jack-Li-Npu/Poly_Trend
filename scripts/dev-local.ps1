@@ -8,6 +8,25 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $pythonExecutable = Join-Path $projectRoot '.venv\Scripts\python.exe'
 $pidFile = Join-Path $projectRoot '.polytrend-local-pids.json'
+$environmentFile = Join-Path $projectRoot '.env'
+$environmentTemplate = Join-Path $projectRoot '.env.example'
+
+if (-not (Test-Path -LiteralPath $environmentFile)) {
+    Copy-Item -LiteralPath $environmentTemplate -Destination $environmentFile
+    Write-Host 'Created .env from .env.example. Add provider secrets there, then relaunch.' -ForegroundColor Yellow
+}
+
+Get-Content -LiteralPath $environmentFile | ForEach-Object {
+    $line = $_.Trim()
+    if (-not $line -or $line.StartsWith('#') -or -not $line.Contains('=')) { return }
+    $name, $value = $line.Split('=', 2)
+    $name = $name.Trim()
+    $value = $value.Trim()
+    if (($value.StartsWith('"') -and $value.EndsWith('"')) -or ($value.StartsWith("'") -and $value.EndsWith("'"))) {
+        $value = $value.Substring(1, $value.Length - 2)
+    }
+    [Environment]::SetEnvironmentVariable($name, $value, 'Process')
+}
 
 if (-not (Test-Path -LiteralPath $pythonExecutable)) {
     throw 'The local Python environment is missing. Create .venv and install services/research[test] first, or use Docker Compose.'

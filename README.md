@@ -31,6 +31,21 @@ Open [http://localhost:3000](http://localhost:3000). API documentation is at [ht
 
 Provider keys are optional. Without them, retrieval, analytics, verification, persistence, the graph workspace, and seeded demonstration remain useful.
 
+### OpenAI-compatible exchange endpoint
+
+Keep model credentials on the backend. Copy `.env.example` to `.env`, then edit these four lines in the root `.env` file:
+
+```dotenv
+OPENAI_API_KEY=replace_with_your_exchange_api_key
+OPENAI_BASE_URL=https://api.3366.ai
+OPENAI_API_MODE=auto
+OPENAI_MODEL=replace_with_a_model_id_supported_by_your_exchange
+```
+
+`OPENAI_BASE_URL` accepts either a host such as `https://api.3366.ai` or a versioned base such as `https://api.3366.ai/v1`. In `auto` mode, Poly Trend first tries the Responses API and then the widely supported Chat Completions API. Never place the key in `NEXT_PUBLIC_*`, frontend code, or browser storage.
+
+Restart the API and worker after editing `.env`. For the Windows local stack, run `scripts/stop-local.ps1` and then `scripts/dev-local.ps1`. For Docker, recreate the services with `docker compose up --build --force-recreate`.
+
 ### Windows local launch without Docker
 
 ```powershell

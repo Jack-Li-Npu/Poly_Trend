@@ -12,6 +12,15 @@ def _flag(name: str, default: bool) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _openai_api_mode() -> str:
+    value = os.getenv("OPENAI_API_MODE", "auto").strip().lower()
+    if value not in {"auto", "responses", "chat_completions"}:
+        raise ValueError(
+            "OPENAI_API_MODE must be auto, responses, or chat_completions"
+        )
+    return value
+
+
 @dataclass(frozen=True, slots=True)
 class Settings:
     app_env: str = os.getenv("APP_ENV", "development")
@@ -24,6 +33,10 @@ class Settings:
     sqlite_path: Path = Path(os.getenv("POLYTREND_SQLITE_PATH", "data/polytrend.db"))
     database_url: str | None = os.getenv("DATABASE_URL")
     redis_url: str | None = os.getenv("REDIS_URL")
+    openai_base_url: str = os.getenv(
+        "OPENAI_BASE_URL", "https://api.openai.com"
+    ).rstrip("/")
+    openai_api_mode: str = _openai_api_mode()
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-5.6-terra")
     openai_deep_model: str = os.getenv("OPENAI_DEEP_MODEL", "gpt-5.6-sol")
     gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.7-flash")

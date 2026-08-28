@@ -76,11 +76,35 @@ class ModelRouter:
         )
 
     async def _openai(self, prompt: str, key: str, model: str) -> ModelResult:
+        modes = (
+            ["responses", "chat_completions"]
+            if self.config.openai_api_mode == "auto"
+            else [self.config.openai_api_mode]
+        )
+        first_error: Exception | None = None
+        for mode in modes:
+            try:
+                if mode == "responses":
+                    return await self._openai_responses(prompt, key, model)
+                return await self._openai_chat_completions(prompt, key, model)
+            except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+                if first_error is None:
+                    first_error = exc
+                if len(modes) == 1 or mode == modes[-1]:
+                    raise
+        raise RuntimeError("OpenAI-compatible endpoint did not return a usable response") from first_error
+
+    def _openai_url(self, route: str) -> str:
+        base = self.config.openai_base_url.rstrip("/")
+        versioned_base = base if base.endswith("/v1") else f"{base}/v1"
+        return f"{versioned_base}/{route.lstrip('/')}"
+
+    async def _openai_responses(self, prompt: str, key: str, model: str) -> ModelResult:
         async with httpx.AsyncClient(timeout=20) as client:
             response = await client.post(
-                "https://api.openai.com/v1/responses",
+                self._openai_url("responses"),
                 headers={"Authorization": f"Bearer {key}"},
-                json={"model": model, "input": prompt, "temperature": 0.1},
+                json={"model": model, "input": prompt},
             )
             response.raise_for_status()
             payload = response.json()
@@ -92,6 +116,34 @@ class ModelRouter:
         return ModelResult(
             takeaways=takeaways, provider="openai", model=model,
             input_tokens=int(usage.get("input_tokens", 0)), output_tokens=int(usage.get("output_tokens", 0)),
+        )
+
+    async def _openai_chat_completions(self, prompt: str, key: str, model: str) -> ModelResult:
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.post(
+                self._openai_url("chat/completions"),
+                headers={"Authorization": f"Bearer {key}"},
+                json={
+                    "model": model,
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "Return only the requested JSON. Never invent evidence.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                },
+            )
+            response.raise_for_status()
+            payload = response.json()
+        text = payload["choices"][0]["message"]["content"]
+        usage = payload.get("usage", {})
+        return ModelResult(
+            takeaways=self._takeaways(text),
+            provider="openai",
+            model=model,
+            input_tokens=int(usage.get("prompt_tokens", 0)),
+            output_tokens=int(usage.get("completion_tokens", 0)),
         )
 
     async def _gemini(self, prompt: str, key: str, model: str) -> ModelResult:
@@ -128,5 +180,7 @@ class ModelRouter:
             "last_provider": self.last_provider,
             "last_error": self.last_error,
             "openai_configured": bool(os.getenv("OPENAI_API_KEY")),
+            "openai_base_url": self.config.openai_base_url,
+            "openai_api_mode": self.config.openai_api_mode,
             "gemini_configured": bool(os.getenv("GEMINI_API_KEY")),
         }
