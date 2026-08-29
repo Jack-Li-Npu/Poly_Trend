@@ -6,6 +6,10 @@ Poly Trend V2 is an adaptive multi-agent research terminal. It separates direct 
 
 The product is deliberately a single-analyst tool. It does not include trading, portfolios, authentication, or report-style agent demonstrations.
 
+![Poly Trend V2 recession research example](docs/images/poly-trend-recession-case.png)
+
+See the [installation and usage guide](docs/USER_GUIDE.md) for setup, provider configuration, and reproducible example questions.
+
 ## What is implemented
 
 - Graph-first Probability Map with a ranked-list alternative and evidence inspector.
@@ -19,7 +23,7 @@ The product is deliberately a single-analyst tool. It does not include trading, 
 - LangGraph 1.2 fan-out/fan-in runtime, checkpointed runs, one bounded verification correction, SSE progress, fork/replay, and durable investigations.
 - Optional OpenAI normal/deep routing with Gemini fallback; useful deterministic operation without any model key.
 - PostgreSQL/pgvector and Redis production stack, plus SQLite-WAL local fallback.
-- Run Inspector, daily 08:00 Asia/Shanghai refresh, MCP adapter, project-local skill, OpenAPI contracts, retrieval benchmark, and CI.
+- Daily 08:00 Asia/Shanghai refresh, MCP adapter, project-local skill, OpenAPI contracts, retrieval benchmark, and CI.
 
 ## Launch
 
@@ -51,7 +55,7 @@ FRED_API_KEY=replace_with_your_fred_key
 
 After changing `.env`, restart both the API and worker. The provider-health endpoint at
 `http://localhost:8000/api/v1/providers/health` shows whether each key was loaded and the
-Run Inspector shows which workers and tools actually executed. Its three-wave view records manager assignments, source-worker handoffs, cross-agent evidence exchange, independent reviews, provider failures, and a public decision ledger. The ledger contains concise, checkable decision summaries with evidence identifiers; it intentionally does not expose private hidden chain-of-thought.
+Provider failures are reflected in answer coverage and caveats rather than being silently ignored. Evidence links, resolution wording, freshness, and inclusion state remain available directly in the research workspace.
 
 Research modes are execution contracts, not cosmetic labels:
 

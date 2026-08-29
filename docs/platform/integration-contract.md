@@ -7,7 +7,7 @@ The web app, MCP adapter, worker, and future clients consume the same FastAPI se
 1. `POST /api/v1/investigations` stores a question and refresh policy.
 2. `POST /api/v1/investigations/{id}/runs` queues a research run.
 3. `GET /api/v1/runs/{id}/events` streams typed public stage events over SSE.
-4. `GET /api/v1/runs/{id}` returns the verified result and structured trace.
+4. `GET /api/v1/runs/{id}` returns the verified result and supporting evidence.
 5. `POST /api/v1/runs/{id}/fork` replays the graph with revised market inclusion.
 6. `PATCH /api/v1/investigations/{id}` changes manual/daily refresh or deep mode.
 
@@ -19,9 +19,9 @@ Only markets typed `direct`, `duplicate`, or `complement` can support a numerica
 
 Every supported number must resolve to a stored `MarketSnapshot.id` in `answer.evidence_ids`. The quality gate rejects unsupported output.
 
-## Public events and traces
+## Public progress and evidence
 
-SSE exposes stages, labels, durations, and counts. The Run Inspector may show retrieval rank changes, provider/fallback metadata, latency, cache state, token totals, estimated cost, checkpoints, and evaluation results. It must not expose hidden reasoning, raw secrets, or authentication headers.
+SSE exposes concise progress stages while the workspace presents source links, resolution wording, freshness, and inclusion state. Internal execution diagnostics must not be rendered in the public product or expose hidden reasoning, raw secrets, or authentication headers.
 
 ## Provider behavior
 
