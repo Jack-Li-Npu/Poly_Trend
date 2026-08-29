@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-postgres = ["psycopg[binary,pool]>=3.3,<4"]
+postgres = ["psycopg[binary,pool]>=3.3,<4", "langgraph-checkpoint-postgres>=3,<4"]
 redis = ["redis>=7.1,<8"]
 test = ["pytest>=8.4,<9", "pytest-asyncio>=1.2,<2"]
 dev = ["polytrend-research[postgres,redis,test]", "ruff>=0.14,<1"]

@@ -396,12 +396,32 @@ export const seedRun: ResearchRun = {
 };
 
 export function makeSeedRun(query: string): ResearchRun {
+  const assetQuestion = /\b(gold|xau|bitcoin|btc)\b/i.test(query) && /\d{3,}/.test(query);
+  const fallbackAnswer: MarketImpliedAnswer = assetQuestion ? {
+    conclusion: "insufficient",
+    label: "Live asset data unavailable",
+    probability: null,
+    market_range: null,
+    agreement: 0,
+    coverage: "insufficient",
+    answer_kind: "insufficient",
+    verdict: "Insufficient evidence",
+    takeaways: [
+      "This is an asset-price forecast, not a prediction-market aggregation question.",
+      "The local web fallback cannot retrieve the spot price or price history.",
+      "Start the research API and configure Alpha Vantage to calculate the estimate.",
+    ],
+    evidence_ids: [], excluded_market_ids: seedMarkets.map((market) => market.id),
+    methodology: "No forecast is created without the live research service and price evidence.",
+    caveats: ["Related seed markets are not used as a substitute probability."],
+    as_of: new Date().toISOString(), provider_freshness: { asset_data: "unavailable" },
+  } : recomputeAnswer(seedMarkets);
   return {
     ...seedRun,
     id: `demo-${Date.now()}`,
     query,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    answer: recomputeAnswer(seedMarkets),
+    answer: fallbackAnswer,
   };
 }

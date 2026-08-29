@@ -8,7 +8,7 @@ from typing import Any
 import httpx
 
 from .config import Settings
-from .models import MarketImpliedAnswer, MarketSnapshot
+from .models import MarketImpliedAnswer, MarketSnapshot, QueryIntent
 
 
 @dataclass(slots=True)
@@ -18,6 +18,14 @@ class ModelResult:
     model: str
     input_tokens: int = 0
     output_tokens: int = 0
+    estimated_cost_usd: float = 0
+
+
+@dataclass(slots=True)
+class PlanModelResult:
+    workers: list[str]
+    provider: str
+    model: str
     estimated_cost_usd: float = 0
 
 
@@ -56,6 +64,49 @@ class ModelRouter:
                 self.last_error = f"Gemini: {type(exc).__name__}: {exc}"
         self.last_provider = "deterministic"
         return ModelResult(takeaways=answer.takeaways[:3], provider="deterministic", model="template-v2")
+
+    async def plan_workers(
+        self,
+        query: str,
+        intent: QueryIntent,
+        available: list[str],
+        max_workers: int,
+    ) -> PlanModelResult:
+        """Ask the manager model for a bounded worker set; fall back to policy routing."""
+        deterministic = ["prediction_market"]
+        if intent.symbol:
+            deterministic.extend(["asset_market_data", "macro", "news"])
+        else:
+            deterministic.extend(["macro", "news"])
+        fallback = list(dict.fromkeys(deterministic))[:max_workers]
+        key = os.getenv("OPENAI_API_KEY")
+        if not key:
+            return PlanModelResult(fallback, "deterministic", "manager-policy-v1")
+        model = self.config.openai_deep_model
+        prompt = (
+            "Select the smallest useful worker set for this research query. Return JSON only as "
+            "{\"workers\":[...]}. Use only available names, never exceed the limit, and include "
+            "asset_market_data for an asset target forecast.\n"
+            + json.dumps({
+                "query": query, "intent": intent.model_dump(mode="json"),
+                "available": available, "max_workers": max_workers,
+            })
+        )
+        try:
+            payload = await self._openai_post("responses", key, {"model": model, "input": prompt})
+            decoded = json.loads(self._responses_text(payload).strip().removeprefix("```json").removesuffix("```").strip())
+            requested = decoded.get("workers", []) if isinstance(decoded, dict) else []
+            workers = [item for item in requested if item in available]
+            workers = list(dict.fromkeys(workers))[:max_workers]
+            if intent.symbol and "asset_market_data" not in workers:
+                workers.insert(0, "asset_market_data")
+            if "prediction_market" not in workers:
+                workers.append("prediction_market")
+            self.last_provider, self.last_error = "openai", None
+            return PlanModelResult(workers[:max_workers], "openai", model)
+        except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+            self.last_error = f"Manager: {type(exc).__name__}: {exc}"
+            return PlanModelResult(fallback, "deterministic", "manager-policy-v1")
 
     def _prompt(self, query: str, answer: MarketImpliedAnswer, markets: list[MarketSnapshot]) -> str:
         evidence = [

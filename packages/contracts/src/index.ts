@@ -11,6 +11,14 @@ export type Investigation = components["schemas"]["Investigation"];
 export type ResearchRun = components["schemas"]["ResearchRun"];
 export type RunDiff = components["schemas"]["RunDiff"];
 export type RunEvent = components["schemas"]["RunEvent"];
+export type ForecastEstimate = components["schemas"]["ForecastEstimate"];
+export type AssetSnapshot = components["schemas"]["AssetSnapshot"];
+export type EvidenceGraph = components["schemas"]["EvidenceGraph"];
+export type ResearchPlan = components["schemas"]["ResearchPlan"];
+export type ResearchTask = components["schemas"]["ResearchTask"];
+export type WorkerRun = components["schemas"]["WorkerRun"];
+export type ToolObservation = components["schemas"]["ToolObservation"];
+export type RunQualityReport = components["schemas"]["RunQualityReport"];
 
 export const API_VERSION = "v1" as const;
 export const API_PREFIX = `/api/${API_VERSION}` as const;

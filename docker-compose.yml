@@ -54,6 +54,11 @@ services:
       OPENAI_DEEP_MODEL: ${OPENAI_DEEP_MODEL:-gpt-5.6-sol}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.7-flash}
+      ALPHA_VANTAGE_API_KEY: ${ALPHA_VANTAGE_API_KEY:-}
+      ALPHA_VANTAGE_BASE_URL: ${ALPHA_VANTAGE_BASE_URL:-https://www.alphavantage.co/query}
+      FRED_API_KEY: ${FRED_API_KEY:-}
+      FRED_BASE_URL: ${FRED_BASE_URL:-https://api.stlouisfed.org/fred}
+      GDELT_BASE_URL: ${GDELT_BASE_URL:-https://api.gdeltproject.org/api/v2}
       POLYMARKET_GAMMA_URL: ${POLYMARKET_GAMMA_URL:-https://gamma-api.polymarket.com}
       POLYMARKET_CLOB_URL: ${POLYMARKET_CLOB_URL:-https://clob.polymarket.com}
       CORS_ORIGINS: http://localhost:${WEB_PORT:-3000}

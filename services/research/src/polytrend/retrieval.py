@@ -3,10 +3,19 @@ from __future__ import annotations
 import asyncio
 import math
 import re
+from calendar import monthrange
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, time, timedelta, timezone
 
-from .models import MarketCandidate, MarketSnapshot, QueryIntent, RelationType, RelationshipEdge
+from .models import (
+    AnswerKind,
+    MarketCandidate,
+    MarketSnapshot,
+    QueryIntent,
+    RelationType,
+    RelationshipEdge,
+    TargetCondition,
+)
 from .analytics import aligned_logit_return_correlation
 from .providers import PolymarketProvider
 from .seed import seed_markets
@@ -22,11 +31,44 @@ def tokens(value: str) -> list[str]:
     return [word for word in re.findall(r"[a-z0-9]+", value.lower()) if word not in STOPWORDS]
 
 
-def parse_intent(query: str) -> QueryIntent:
+def parse_intent(query: str, now: datetime | None = None) -> QueryIntent:
     years = [int(value) for value in re.findall(r"\b20\d{2}\b", query)]
     lower = query.lower()
+    zone = timezone(timedelta(hours=8), "Asia/Shanghai")
+    local_now = now.astimezone(zone) if now else datetime.now(zone)
     geography = "United States" if any(key in lower for key in ("u.s.", "us ", "united states", "america")) else None
-    known = [name for name in ("Federal Reserve", "U.S. economy", "recession", "inflation", "GDP", "Bitcoin") if name.lower().replace("u.s.", "us") in lower.replace("u.s.", "us")]
+    known = [name for name in ("Federal Reserve", "U.S. economy", "recession", "inflation", "GDP", "Bitcoin", "Gold") if name.lower().replace("u.s.", "us") in lower.replace("u.s.", "us")]
+    asset = symbol = None
+    if any(value in lower for value in ("gold", "xau", "xauusd")):
+        asset, symbol = "Gold", "XAUUSD"
+    elif any(value in lower for value in ("bitcoin", "btc")):
+        asset, symbol = "Bitcoin", "BTCUSD"
+
+    target_match = re.search(
+        r"(?:\$|usd\s*)?([0-9]{1,3}(?:,[0-9]{3})+(?:\.\d+)?|[0-9]{3,}(?:\.\d+)?)",
+        lower,
+    )
+    target_value = float(target_match.group(1).replace(",", "")) if target_match else None
+    condition = None
+    if target_value is not None and asset:
+        condition = (
+            TargetCondition.CLOSE_BELOW
+            if re.search(r"close|finish|end", lower) and re.search(r"below|under", lower)
+            else TargetCondition.CLOSE_ABOVE
+            if re.search(r"close|finish|end", lower) and re.search(r"above|over|reach", lower)
+            else TargetCondition.TOUCH
+        )
+
+    deadline = None
+    if "this month" in lower or "month end" in lower or "end of the month" in lower:
+        last_day = monthrange(local_now.year, local_now.month)[1]
+        deadline = datetime.combine(
+            local_now.date().replace(day=last_day), time(23, 59, 59), zone
+        )
+    elif years:
+        deadline = datetime(max(years), 12, 31, 23, 59, 59, tzinfo=zone)
+
+    requested = AnswerKind.MODEL_ESTIMATE if asset and target_value and deadline else None
     return QueryIntent(
         proposition=query.strip(),
         entities=known,
@@ -34,7 +76,13 @@ def parse_intent(query: str) -> QueryIntent:
         horizon=str(max(years)) if years else None,
         target_year=max(years) if years else None,
         outcome="no" if re.search(r"\bnot\b|\bwon't\b", lower) else "yes",
-        ambiguous=len(tokens(query)) < 3,
+        ambiguous=len(tokens(query)) < 3 or bool(asset and (target_value is None or deadline is None)),
+        asset=asset,
+        symbol=symbol,
+        target_value=target_value,
+        target_condition=condition,
+        deadline=deadline,
+        requested_answer_type=requested,
     )
 
 

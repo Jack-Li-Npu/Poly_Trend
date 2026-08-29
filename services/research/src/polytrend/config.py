@@ -40,6 +40,21 @@ class Settings:
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-5.6-terra")
     openai_deep_model: str = os.getenv("OPENAI_DEEP_MODEL", "gpt-5.6-sol")
     gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.7-flash")
+    alpha_vantage_api_key: str | None = os.getenv("ALPHA_VANTAGE_API_KEY")
+    alpha_vantage_url: str = os.getenv(
+        "ALPHA_VANTAGE_BASE_URL", "https://www.alphavantage.co/query"
+    )
+    fred_api_key: str | None = os.getenv("FRED_API_KEY")
+    fred_url: str = os.getenv(
+        "FRED_BASE_URL", "https://api.stlouisfed.org/fred"
+    ).rstrip("/")
+    gdelt_url: str = os.getenv(
+        "GDELT_BASE_URL", "https://api.gdeltproject.org/api/v2"
+    ).rstrip("/")
+    model_max_concurrency: int = int(os.getenv("MODEL_MAX_CONCURRENCY", "4"))
+    investigation_timeout_seconds: int = int(
+        os.getenv("INVESTIGATION_TIMEOUT_SECONDS", "300")
+    )
 
 
 settings = Settings()

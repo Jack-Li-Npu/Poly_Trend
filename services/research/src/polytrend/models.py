@@ -22,6 +22,34 @@ class RunStatus(StrEnum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class InvestigationMode(StrEnum):
+    FAST = "fast"
+    STANDARD = "standard"
+    DEEP = "deep"
+
+
+class AnswerKind(StrEnum):
+    MARKET_IMPLIED = "market_implied"
+    MODEL_ESTIMATE = "model_estimate"
+    DIRECTIONAL_ASSESSMENT = "directional_assessment"
+    INSUFFICIENT = "insufficient"
+
+
+class TargetCondition(StrEnum):
+    TOUCH = "touch"
+    CLOSE_ABOVE = "close_above"
+    CLOSE_BELOW = "close_below"
+
+
+class WorkerStatus(StrEnum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
 
 
 class CoverageState(StrEnum):
@@ -45,6 +73,11 @@ class PricePoint(BaseModel):
     probability: float = Field(ge=0, le=1)
 
 
+class AssetPricePoint(BaseModel):
+    timestamp: datetime
+    value: float = Field(gt=0)
+
+
 class QueryIntent(BaseModel):
     proposition: str
     entities: list[str] = Field(default_factory=list)
@@ -53,6 +86,46 @@ class QueryIntent(BaseModel):
     target_year: int | None = None
     outcome: str = "yes"
     ambiguous: bool = False
+    asset: str | None = None
+    symbol: str | None = None
+    target_value: float | None = Field(default=None, gt=0)
+    currency: str = "USD"
+    target_condition: TargetCondition | None = None
+    deadline: datetime | None = None
+    timezone: str = "Asia/Shanghai"
+    requested_answer_type: AnswerKind | None = None
+
+
+class AssetSnapshot(BaseModel):
+    symbol: str
+    name: str
+    currency: str = "USD"
+    price: float = Field(gt=0)
+    as_of: datetime
+    source: str
+    source_url: str | None = None
+    freshness: str = "live"
+    history: list[AssetPricePoint] = Field(default_factory=list)
+
+
+class ForecastEstimate(BaseModel):
+    symbol: str
+    condition: TargetCondition
+    current_value: float = Field(gt=0)
+    target_value: float = Field(gt=0)
+    target_gap: float
+    deadline: datetime
+    days_remaining: float = Field(ge=0)
+    probability: float = Field(ge=0, le=1)
+    probability_range: tuple[float, float]
+    verdict: str
+    confidence: float = Field(ge=0, le=1)
+    realized_volatility_20d: float = Field(ge=0)
+    model_probabilities: dict[str, float] = Field(default_factory=dict)
+    paths: int = 20_000
+    methodology: str
+    evidence_ids: list[str] = Field(default_factory=list)
+    as_of: datetime = Field(default_factory=utc_now)
 
 
 class MarketSnapshot(BaseModel):
@@ -117,6 +190,95 @@ class EvidenceItem(BaseModel):
     published_at: datetime | None = None
     summary: str = ""
     supports_numeric_answer: bool = False
+    provider: str | None = None
+    retrieved_at: datetime = Field(default_factory=utc_now)
+    freshness: str = "unknown"
+
+
+class SourceCitation(BaseModel):
+    evidence_id: str
+    title: str
+    source: str
+    url: str | None = None
+    supports: str
+
+
+class EvidenceNode(BaseModel):
+    id: str
+    kind: str
+    label: str
+    value: str | None = None
+    source: str | None = None
+    relevance: float = Field(default=0.5, ge=0, le=1)
+    included: bool = True
+    evidence_id: str | None = None
+
+
+class EvidenceGraph(BaseModel):
+    query_node: EvidenceNode
+    nodes: list[EvidenceNode] = Field(default_factory=list)
+    edges: list[RelationshipEdge] = Field(default_factory=list)
+
+
+class RunBudget(BaseModel):
+    max_workers: int
+    max_tool_calls: int
+    max_concurrency: int
+    timeout_seconds: int
+
+
+class ResearchTask(BaseModel):
+    id: str
+    worker_type: str
+    objective: str
+    tools: list[str] = Field(default_factory=list)
+    depends_on: list[str] = Field(default_factory=list)
+    required: bool = True
+
+
+class ResearchPlan(BaseModel):
+    mode: InvestigationMode
+    tasks: list[ResearchTask]
+    budget: RunBudget
+    stopping_conditions: list[str] = Field(default_factory=list)
+    manager_provider: str = "deterministic"
+    manager_model: str = "policy-v1"
+
+
+class ToolObservation(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    task_id: str
+    tool: str
+    provider: str
+    status: str
+    started_at: datetime
+    completed_at: datetime
+    duration_ms: int
+    cached: bool = False
+    retry_count: int = 0
+    evidence_ids: list[str] = Field(default_factory=list)
+    error: str | None = None
+
+
+class WorkerRun(BaseModel):
+    task_id: str
+    worker_type: str
+    objective: str
+    status: WorkerStatus
+    started_at: datetime
+    completed_at: datetime
+    duration_ms: int
+    tool_calls: int = 0
+    output_count: int = 0
+    error: str | None = None
+
+
+class RunQualityReport(BaseModel):
+    passed: bool = False
+    supported_numeric_claims: int = 0
+    missing_evidence_ids: list[str] = Field(default_factory=list)
+    bounded_corrections: int = 0
+    warnings: list[str] = Field(default_factory=list)
 
 
 class MarketImpliedAnswer(BaseModel):
@@ -133,6 +295,16 @@ class MarketImpliedAnswer(BaseModel):
     caveats: list[str] = Field(default_factory=list)
     as_of: datetime = Field(default_factory=utc_now)
     provider_freshness: dict[str, str] = Field(default_factory=dict)
+    answer_kind: AnswerKind = AnswerKind.MARKET_IMPLIED
+    verdict: str | None = None
+    confidence: float | None = Field(default=None, ge=0, le=1)
+    current_value: float | None = None
+    target_value: float | None = None
+    target_gap: float | None = None
+    deadline: datetime | None = None
+    days_remaining: float | None = None
+    forecast: ForecastEstimate | None = None
+    citations: list[SourceCitation] = Field(default_factory=list)
 
 
 class RunEvent(BaseModel):
@@ -171,6 +343,7 @@ class ResearchRun(BaseModel):
     query: str
     status: RunStatus = RunStatus.QUEUED
     deep_mode: bool = False
+    mode: InvestigationMode = InvestigationMode.STANDARD
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
     intent: QueryIntent | None = None
@@ -182,6 +355,14 @@ class ResearchRun(BaseModel):
     traces: list[TraceSpan] = Field(default_factory=list)
     diff: RunDiff | None = None
     error: str | None = None
+    plan: ResearchPlan | None = None
+    workers: list[WorkerRun] = Field(default_factory=list)
+    tool_observations: list[ToolObservation] = Field(default_factory=list)
+    evidence_graph: EvidenceGraph | None = None
+    asset_snapshot: AssetSnapshot | None = None
+    forecast: ForecastEstimate | None = None
+    quality_report: RunQualityReport | None = None
+    cancelled: bool = False
 
 
 class Investigation(BaseModel):
@@ -189,6 +370,7 @@ class Investigation(BaseModel):
     query: str = Field(min_length=4, max_length=500)
     refresh_policy: RefreshPolicy = RefreshPolicy.MANUAL
     deep_mode: bool = False
+    mode: InvestigationMode = InvestigationMode.STANDARD
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
     latest_run_id: str | None = None
@@ -201,18 +383,20 @@ class InvestigationCreate(BaseModel):
     query: str = Field(min_length=4, max_length=500)
     refresh_policy: RefreshPolicy = RefreshPolicy.MANUAL
     deep_mode: bool = False
+    mode: InvestigationMode = InvestigationMode.STANDARD
 
 
 class InvestigationPatch(BaseModel):
     refresh_policy: RefreshPolicy | None = None
     deep_mode: bool | None = None
     archived: bool | None = None
+    mode: InvestigationMode | None = None
 
 
 class RunCreate(BaseModel):
     included_market_ids: list[str] | None = None
+    mode: InvestigationMode | None = None
 
 
 class ForkCreate(BaseModel):
     included_market_ids: list[str]
-

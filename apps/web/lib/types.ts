@@ -8,7 +8,10 @@ export type RelationType =
   | "external_context";
 
 export type CoverageState = "good" | "limited" | "insufficient";
-export type RunStatus = "queued" | "running" | "completed" | "failed";
+export type RunStatus = "queued" | "running" | "completed" | "failed" | "cancelled";
+export type InvestigationMode = "fast" | "standard" | "deep";
+export type AnswerKind = "market_implied" | "model_estimate" | "directional_assessment" | "insufficient";
+export type TargetCondition = "touch" | "close_above" | "close_below";
 
 export interface PricePoint {
   timestamp: string;
@@ -23,6 +26,28 @@ export interface QueryIntent {
   target_year?: number | null;
   outcome: string;
   ambiguous: boolean;
+  asset?: string | null;
+  symbol?: string | null;
+  target_value?: number | null;
+  currency?: string;
+  target_condition?: TargetCondition | null;
+  deadline?: string | null;
+  timezone?: string;
+  requested_answer_type?: AnswerKind | null;
+}
+
+export interface AssetPricePoint { timestamp: string; value: number; }
+export interface AssetSnapshot {
+  symbol: string; name: string; currency: string; price: number; as_of: string;
+  source: string; source_url?: string | null; freshness: string; history: AssetPricePoint[];
+}
+
+export interface ForecastEstimate {
+  symbol: string; condition: TargetCondition; current_value: number; target_value: number;
+  target_gap: number; deadline: string; days_remaining: number; probability: number;
+  probability_range: [number, number]; verdict: string; confidence: number;
+  realized_volatility_20d: number; model_probabilities: Record<string, number>;
+  paths: number; methodology: string; evidence_ids: string[]; as_of: string;
 }
 
 export interface MarketSnapshot {
@@ -76,7 +101,20 @@ export interface EvidenceItem {
   published_at?: string | null;
   summary: string;
   supports_numeric_answer: boolean;
+  provider?: string | null;
+  retrieved_at?: string;
+  freshness?: string;
 }
+
+export interface SourceCitation { evidence_id: string; title: string; source: string; url?: string | null; supports: string; }
+export interface EvidenceNode { id: string; kind: string; label: string; value?: string | null; source?: string | null; relevance: number; included: boolean; evidence_id?: string | null; }
+export interface EvidenceGraph { query_node: EvidenceNode; nodes: EvidenceNode[]; edges: RelationshipEdge[]; }
+export interface RunBudget { max_workers: number; max_tool_calls: number; max_concurrency: number; timeout_seconds: number; }
+export interface ResearchTask { id: string; worker_type: string; objective: string; tools: string[]; depends_on: string[]; required: boolean; }
+export interface ResearchPlan { mode: InvestigationMode; tasks: ResearchTask[]; budget: RunBudget; stopping_conditions: string[]; manager_provider: string; manager_model: string; }
+export interface WorkerRun { task_id: string; worker_type: string; objective: string; status: string; started_at: string; completed_at: string; duration_ms: number; tool_calls: number; output_count: number; error?: string | null; }
+export interface ToolObservation { id: string; task_id: string; tool: string; provider: string; status: string; started_at: string; completed_at: string; duration_ms: number; cached: boolean; retry_count: number; evidence_ids: string[]; error?: string | null; }
+export interface RunQualityReport { passed: boolean; supported_numeric_claims: number; missing_evidence_ids: string[]; bounded_corrections: number; warnings: string[]; }
 
 export interface MarketImpliedAnswer {
   conclusion: string;
@@ -92,6 +130,16 @@ export interface MarketImpliedAnswer {
   caveats: string[];
   as_of: string;
   provider_freshness: Record<string, string>;
+  answer_kind?: AnswerKind;
+  verdict?: string | null;
+  confidence?: number | null;
+  current_value?: number | null;
+  target_value?: number | null;
+  target_gap?: number | null;
+  deadline?: string | null;
+  days_remaining?: number | null;
+  forecast?: ForecastEstimate | null;
+  citations?: SourceCitation[];
 }
 
 export interface RunEvent {
@@ -130,6 +178,7 @@ export interface ResearchRun {
   query: string;
   status: RunStatus;
   deep_mode: boolean;
+  mode?: InvestigationMode;
   created_at: string;
   updated_at: string;
   intent?: QueryIntent | null;
@@ -141,6 +190,14 @@ export interface ResearchRun {
   traces: TraceSpan[];
   diff?: RunDiff | null;
   error?: string | null;
+  plan?: ResearchPlan | null;
+  workers?: WorkerRun[];
+  tool_observations?: ToolObservation[];
+  evidence_graph?: EvidenceGraph | null;
+  asset_snapshot?: AssetSnapshot | null;
+  forecast?: ForecastEstimate | null;
+  quality_report?: RunQualityReport | null;
+  cancelled?: boolean;
 }
 
 export interface Investigation {
@@ -148,6 +205,7 @@ export interface Investigation {
   query: string;
   refresh_policy: "manual" | "daily";
   deep_mode: boolean;
+  mode?: InvestigationMode;
   created_at: string;
   updated_at: string;
   latest_run_id?: string | null;

@@ -29,7 +29,7 @@ import { useMemo, useState } from "react";
 import { ProbabilityGraph } from "@/components/ProbabilityGraph";
 import { researchApiBase, runInvestigation, updateInvestigation, type StageUpdate } from "@/lib/research-api";
 import { recomputeAnswer, seedInvestigation, seedRun } from "@/lib/seed";
-import type { Investigation, MarketSnapshot, ResearchRun, WorkspaceView } from "@/lib/types";
+import type { Investigation, InvestigationMode, MarketSnapshot, ResearchRun, WorkspaceView } from "@/lib/types";
 
 const relationLabels: Record<MarketSnapshot["relation_type"], string> = {
   direct: "Direct match",
@@ -135,6 +135,24 @@ function RunInspector({ run, fallback, onClose }: { run: ResearchRun; fallback: 
         </div>
 
         <section className="inspector-section">
+          <div className="section-heading"><h3>Manager plan</h3><span>{run.plan?.mode ?? "standard"}</span></div>
+          <div className="audit-card">
+            <p><IconActivity size={15} /> {run.plan ? `${run.plan.manager_provider}:${run.plan.manager_model}` : "Deterministic fallback manager"}</p>
+            <p><IconCheck size={15} /> {run.workers?.length ?? 0} workers · {run.tool_observations?.length ?? 0} tool observations</p>
+            <p><IconClock size={15} /> Concurrency limit {run.plan?.budget.max_concurrency ?? 1} · tool budget {run.plan?.budget.max_tool_calls ?? 0}</p>
+          </div>
+          <div className="worker-grid">
+            {run.workers?.map((worker) => (
+              <div className={`worker-card ${worker.status}`} key={worker.task_id}>
+                <strong>{worker.worker_type.replaceAll("_", " ")}</strong>
+                <span>{worker.status} · {worker.duration_ms}ms</span>
+                {worker.error && <small>{worker.error}</small>}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="inspector-section">
           <div className="section-heading"><h3>Execution trace</h3><span>{run.traces.length} nodes</span></div>
           <div className="trace-list">
             {run.traces.map((trace, index) => (
@@ -178,6 +196,7 @@ export function ProbabilityWorkspace() {
   const [run, setRun] = useState<ResearchRun>(seedRun);
   const [markets, setMarkets] = useState<MarketSnapshot[]>(seedRun.markets.map((market) => ({ ...market })));
   const [query, setQuery] = useState(seedRun.query);
+  const [mode, setMode] = useState<InvestigationMode>("standard");
   const [selectedId, setSelectedId] = useState(seedRun.markets[0].id);
   const [view, setView] = useState<WorkspaceView>("graph");
   const [zoom, setZoom] = useState(1);
@@ -193,6 +212,7 @@ export function ProbabilityWorkspace() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const answer = useMemo(() => {
+    if (run.answer?.answer_kind === "model_estimate" || run.answer?.answer_kind === "insufficient") return run.answer;
     const inclusionChanged = markets.some((market) => {
       const original = run.markets.find((candidate) => candidate.id === market.id);
       return original?.included !== market.included;
@@ -209,7 +229,7 @@ export function ProbabilityWorkspace() {
     if (cleanQuery.length < 4 || loading) return;
     setLoading(true);
     setShowRunStatus(true);
-    const result = await runInvestigation(cleanQuery, setStage);
+    const result = await runInvestigation(cleanQuery, setStage, mode);
     setInvestigation(result.investigation);
     setRun(result.run);
     setMarkets(result.run.markets.map((market) => ({ ...market })));
@@ -247,6 +267,25 @@ export function ProbabilityWorkspace() {
 
   return (
     <main className="workspace-shell">
+      <style>{`
+        .command-row{grid-template-columns:minmax(0,1fr) auto 306px;gap:10px}
+        .mode-switcher{height:52px;display:flex;align-items:center;padding:4px;border:1px solid var(--line);border-radius:8px;background:#fff}
+        .mode-switcher button{height:40px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:var(--muted);font-size:9px;text-transform:capitalize;cursor:pointer}
+        .mode-switcher button.active{background:var(--violet-soft);color:var(--violet-dark);font-weight:700}
+        .analysis-layout{grid-template-columns:280px minmax(560px,1fr) 340px}
+        .map-stage{height:clamp(560px,calc(100vh - 154px),620px);align-self:start}
+        .probability-graph{min-height:0}
+        .answer-verdict{margin:0 0 9px;color:var(--violet-dark);font-size:13px;font-weight:720}
+        .forecast-facts{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:14px 0 0}
+        .forecast-facts div{padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--soft-bg)}
+        .forecast-facts dt{color:var(--muted);font-size:8px}.forecast-facts dd{margin:3px 0 0;font-size:10px;font-weight:680}
+        .worker-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
+        .worker-card{display:flex;flex-direction:column;gap:4px;padding:10px;border:1px solid var(--line);border-left:3px solid var(--green);border-radius:7px}
+        .worker-card.failed{border-left-color:var(--red)}.worker-card strong{font-size:10px;text-transform:capitalize}
+        .worker-card span,.worker-card small{color:var(--muted);font-size:8.5px;line-height:1.35}
+        @media(max-height:850px){.map-stage{height:calc(100vh - 154px);min-height:520px}.probability-graph{min-height:0}}
+        @media(max-width:900px){.command-row{grid-template-columns:1fr}.mode-switcher{justify-content:center}.map-stage{height:620px}}
+      `}</style>
       <header className="topbar">
         <div className="brand-lockup">
           <div className="brand-mark"><span>PT</span></div>
@@ -276,6 +315,11 @@ export function ProbabilityWorkspace() {
           <input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Research question" placeholder="Ask a measurable prediction-market question" />
           <button type="submit" disabled={loading}>{loading ? <><IconRefresh className="spin" size={17} />Researching</> : "Search"}</button>
         </form>
+        <div className="mode-switcher" aria-label="Research depth">
+          {(["fast", "standard", "deep"] as InvestigationMode[]).map((item) => (
+            <button type="button" key={item} className={mode === item ? "active" : ""} onClick={() => setMode(item)}>{item}</button>
+          ))}
+        </div>
         <div className="run-status-wrap">
           <button type="button" className={`run-status ${loading ? "is-running" : ""}`} onClick={() => setShowRunStatus((current) => !current)}>
             {loading ? <IconRefresh className="spin" size={19} /> : <IconCircleCheck size={19} />}
@@ -285,7 +329,7 @@ export function ProbabilityWorkspace() {
           {showRunStatus && (
             <div className="run-popover">
               <div className="progress-track"><span style={{ width: `${stage.progress}%` }} /></div>
-              <strong>{loading ? stage.label : "Evidence verified"}</strong>
+              <strong>{loading ? stage.label : answer.answer_kind === "insufficient" ? "Evidence gap verified" : "Evidence verified"}</strong>
               <p>{fallback ? "Local deterministic fallback is active; the full interface remains functional without an LLM key." : "Live provider data and the production research graph completed successfully."}</p>
               <button type="button" onClick={() => setShowRunInspector(true)}><IconActivity size={15} />Inspect structured run data</button>
             </div>
@@ -296,19 +340,28 @@ export function ProbabilityWorkspace() {
       <div className="analysis-layout">
         <aside className="answer-rail">
           <div className="answer-main">
-            <span className="eyebrow">MARKET-IMPLIED ANSWER</span>
+            <span className="eyebrow">{answer.answer_kind === "model_estimate" ? "MODEL-ESTIMATED SCENARIO" : answer.answer_kind === "insufficient" ? "INSUFFICIENT EVIDENCE" : "MARKET-IMPLIED ANSWER"}</span>
             <h1>{answerTitle}</h1>
-            <div className="answer-number"><strong>{percent(answer.probability)}</strong><span>probability</span></div>
-            <div className="answer-range"><span>Market range</span><strong>{answer.market_range ? `${percent(answer.market_range[0])} – ${percent(answer.market_range[1])}` : "Not available"}</strong></div>
+            {answer.verdict && <div className="answer-verdict">{answer.verdict}</div>}
+            <div className="answer-number"><strong>{percent(answer.probability)}</strong><span>{answer.answer_kind === "model_estimate" ? "estimated touch probability" : "probability"}</span></div>
+            <div className="answer-range"><span>{answer.answer_kind === "model_estimate" ? "Model range" : "Market range"}</span><strong>{answer.market_range ? `${percent(answer.market_range[0])} – ${percent(answer.market_range[1])}` : "Not available"}</strong></div>
+            {answer.current_value != null && answer.target_value != null && (
+              <dl className="forecast-facts">
+                <div><dt>Current</dt><dd>{money(answer.current_value)}</dd></div>
+                <div><dt>Target</dt><dd>{money(answer.target_value)}</dd></div>
+                <div><dt>Target gap</dt><dd>{answer.target_gap == null ? "—" : `${answer.target_gap >= 0 ? "+" : ""}${percent(answer.target_gap)}`}</dd></div>
+                <div><dt>Deadline</dt><dd>{answer.deadline ? formatDate(answer.deadline) : "—"}</dd></div>
+              </dl>
+            )}
             <p className="as-of">As of {formatDate(answer.as_of, true)}</p>
           </div>
 
           <div className="answer-metrics">
-            <div className="metric-label"><span>Agreement <IconInfoCircle size={14} /></span><strong>{percent(answer.agreement)}</strong></div>
+            <div className="metric-label"><span>{answer.answer_kind === "model_estimate" ? "Confidence" : "Agreement"} <IconInfoCircle size={14} /></span><strong>{percent(answer.confidence ?? answer.agreement)}</strong></div>
             <div className="metric-track"><span style={{ width: `${answer.agreement * 100}%` }} /></div>
             <div className="metric-label"><span>Coverage <IconInfoCircle size={14} /></span><strong>{answer.coverage}</strong></div>
             <div className="metric-track coverage"><span style={{ width: `${Math.min(100, (answer.evidence_ids.length / 5) * 100)}%` }} /></div>
-            <small>{answer.evidence_ids.length} comparable of {markets.length} markets</small>
+            <small>{answer.answer_kind === "model_estimate" ? `${run.asset_snapshot?.history.length ?? 0} price observations · ${run.forecast?.paths?.toLocaleString() ?? 0} paths` : `${answer.evidence_ids.length} comparable of ${markets.length} markets`}</small>
           </div>
 
           <div className="takeaways">
@@ -356,9 +409,10 @@ export function ProbabilityWorkspace() {
             query={run.query}
             intent={run.intent}
             answer={answer}
+            evidenceGraph={run.evidence_graph}
           />
           <div className="map-footer">
-            <span>Only direct and logically comparable markets affect the numerical answer.</span>
+            <span>{run.intent?.symbol ? "Price history drives the estimate; markets and context remain separate evidence." : "Only direct and logically comparable markets affect the numerical answer."}</span>
             <button type="button" onClick={() => setShowRunInspector(true)}><IconActivity size={14} />Run inspector</button>
           </div>
         </section>

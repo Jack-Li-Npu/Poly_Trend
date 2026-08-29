@@ -1,8 +1,8 @@
 # Poly Trend V2
 
-Poly Trend V2 is a practical prediction-market research terminal. It turns a measurable question into a saved, inspectable market-implied answer:
+Poly Trend V2 is an adaptive multi-agent research terminal. It separates direct prediction-market answers from transparent asset-price scenario forecasts:
 
-`question → hybrid retrieval → relationship map → quantitative aggregation → skeptical verification → saved run`
+`question → manager plan → parallel specialists → evidence merge → deterministic analytics → skeptical verification → saved run`
 
 The product is deliberately a single-analyst tool. It does not include trading, portfolios, authentication, or report-style agent demonstrations.
 
@@ -13,6 +13,9 @@ The product is deliberately a single-analyst tool. It does not include trading, 
 - Direct, duplicate, complement, proxy, correlation, and external-context relationships.
 - Dependency-discounted, liquidity/quality/relevance weighted log-odds aggregation.
 - Strict evidence boundary: proxies explain disagreement but never silently change the estimate.
+- Gold barrier forecasts using live spot/history data and a deterministic GBM/bootstrap ensemble.
+- Adaptive Fast, Standard, and Deep worker budgets with a bounded manager-selected worker pool.
+- Alpha Vantage price/history, FRED macro, GDELT news, and Polymarket research tools.
 - LangGraph 1.2 fan-out/fan-in runtime, checkpointed runs, one bounded verification correction, SSE progress, fork/replay, and durable investigations.
 - Optional OpenAI normal/deep routing with Gemini fallback; useful deterministic operation without any model key.
 - PostgreSQL/pgvector and Redis production stack, plus SQLite-WAL local fallback.
@@ -30,6 +33,25 @@ docker compose up --build
 Open [http://localhost:3000](http://localhost:3000). API documentation is at [http://localhost:8000/docs](http://localhost:8000/docs).
 
 Provider keys are optional. Without them, retrieval, analytics, verification, persistence, the graph workspace, and seeded demonstration remain useful.
+Asset-price forecasts deliberately return `Insufficient evidence` until a price-data key is configured.
+
+### Price, macro, and news providers
+
+Put provider keys in the root `.env` file, never in the browser application:
+
+```dotenv
+# Required for Gold spot/history and a numerical Gold barrier forecast
+ALPHA_VANTAGE_API_KEY=replace_with_your_alpha_vantage_key
+
+# Optional official macro context
+FRED_API_KEY=replace_with_your_fred_key
+
+# GDELT and Polymarket use their public endpoints and do not need keys
+```
+
+After changing `.env`, restart both the API and worker. The provider-health endpoint at
+`http://localhost:8000/api/v1/providers/health` shows whether each key was loaded and the
+Run Inspector shows which workers and tools actually executed.
 
 ### OpenAI-compatible exchange endpoint
 
