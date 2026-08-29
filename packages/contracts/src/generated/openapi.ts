@@ -230,6 +230,48 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgentMessage */
+        AgentMessage: {
+            /** Id */
+            id?: string;
+            /** Sequence */
+            sequence: number;
+            /** From Agent */
+            from_agent: string;
+            /** To Agent */
+            to_agent: string;
+            /** Message Type */
+            message_type: string;
+            /** Summary */
+            summary: string;
+            /** Task Id */
+            task_id?: string | null;
+            /** Evidence Ids */
+            evidence_ids?: string[];
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp?: string;
+        };
+        /** AnalysisFinding */
+        AnalysisFinding: {
+            /** Id */
+            id?: string;
+            /** Task Id */
+            task_id: string;
+            /** Agent Name */
+            agent_name: string;
+            /** Summary */
+            summary: string;
+            /** Evidence Ids */
+            evidence_ids?: string[];
+            /**
+             * Confidence
+             * @default 0.5
+             */
+            confidence: number;
+        };
         /**
          * AnswerKind
          * @enum {string}
@@ -280,6 +322,29 @@ export interface components {
          * @enum {string}
          */
         CoverageState: "good" | "limited" | "insufficient";
+        /** DecisionRecord */
+        DecisionRecord: {
+            /** Id */
+            id?: string;
+            /** Agent */
+            agent: string;
+            /** Decision */
+            decision: string;
+            /** Rationale Summary */
+            rationale_summary: string;
+            /** Evidence Ids */
+            evidence_ids?: string[];
+            /**
+             * Confidence
+             * @default 0.5
+             */
+            confidence: number;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp?: string;
+        };
         /** EvidenceGraph */
         EvidenceGraph: {
             query_node: components["schemas"]["EvidenceNode"];
@@ -781,6 +846,12 @@ export interface components {
             asset_snapshot?: components["schemas"]["AssetSnapshot"] | null;
             forecast?: components["schemas"]["ForecastEstimate"] | null;
             quality_report?: components["schemas"]["RunQualityReport"] | null;
+            /** Agent Messages */
+            agent_messages?: components["schemas"]["AgentMessage"][];
+            /** Decision Records */
+            decision_records?: components["schemas"]["DecisionRecord"][];
+            /** Analysis Findings */
+            analysis_findings?: components["schemas"]["AnalysisFinding"][];
             /**
              * Cancelled
              * @default false
@@ -793,12 +864,35 @@ export interface components {
             id: string;
             /** Worker Type */
             worker_type: string;
+            /**
+             * Agent Name
+             * @default Legacy worker
+             */
+            agent_name: string;
             /** Objective */
             objective: string;
             /** Tools */
             tools?: string[];
             /** Depends On */
             depends_on?: string[];
+            /**
+             * Wave
+             * @default 1
+             */
+            wave: number;
+            /** Query Variant */
+            query_variant?: string | null;
+            /**
+             * Deliver To
+             * @default evidence_desk
+             */
+            deliver_to: string;
+            /** Success Criteria */
+            success_criteria?: string[];
+            /** Parameters */
+            parameters?: {
+                [key: string]: unknown;
+            };
             /**
              * Required
              * @default true
@@ -1008,6 +1102,16 @@ export interface components {
             task_id: string;
             /** Worker Type */
             worker_type: string;
+            /**
+             * Agent Name
+             * @default Legacy worker
+             */
+            agent_name: string;
+            /**
+             * Wave
+             * @default 1
+             */
+            wave: number;
             /** Objective */
             objective: string;
             status: components["schemas"]["WorkerStatus"];
@@ -1033,6 +1137,15 @@ export interface components {
              * @default 0
              */
             output_count: number;
+            /** Input Evidence Ids */
+            input_evidence_ids?: string[];
+            /** Output Evidence Ids */
+            output_evidence_ids?: string[];
+            /**
+             * Public Summary
+             * @default
+             */
+            public_summary: string;
             /** Error */
             error?: string | null;
         };

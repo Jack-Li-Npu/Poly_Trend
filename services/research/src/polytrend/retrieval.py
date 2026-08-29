@@ -187,6 +187,38 @@ class HybridRetriever:
         return intent, selected, candidates[:limit]
 
 
+def orient_markets_to_query(query: str, markets: list[MarketSnapshot]) -> list[MarketSnapshot]:
+    """Re-score merged multi-query results against the user's original proposition."""
+    intent = parse_intent(query)
+    query_words = set(tokens(query))
+    required_entities = [
+        entity.lower().replace("u.s.", "us")
+        for entity in intent.entities
+        if entity not in {"United States", "U.S. economy"}
+    ]
+    if intent.asset:
+        required_entities.append(intent.asset.lower())
+    oriented: list[MarketSnapshot] = []
+    for original in markets:
+        market = original.model_copy(deep=True)
+        text = _text(market).lower().replace("u.s.", "us")
+        market_words = set(tokens(_text(market)))
+        overlap = len(query_words & market_words) / max(1, len(query_words))
+        lexical = _lexical_score(query, market)
+        semantic = _dense_hash_score(query, market)
+        entity_match = not required_entities or any(entity in text for entity in required_entities)
+        market.relevance = min(0.99, 0.5 * lexical * 2.2 + 0.3 * semantic + 0.2 * min(1, overlap))
+        if entity_match and overlap >= 0.42:
+            inverse_wording = any(value in text for value in (" avoid ", " not ", "below", "under"))
+            market.relation_type = RelationType.COMPLEMENT if inverse_wording else RelationType.DIRECT
+            market.relation_reason = "Entity, outcome and horizon were rechecked against the original question."
+        else:
+            market.relation_type = RelationType.SUPPORTING_PROXY
+            market.relation_reason = "Retrieved by an expansion query but not directly comparable to the original proposition."
+        oriented.append(market)
+    return sorted(oriented, key=lambda item: item.relevance, reverse=True)
+
+
 def relationship_map(markets: list[MarketSnapshot]) -> list[RelationshipEdge]:
     if not markets:
         return []

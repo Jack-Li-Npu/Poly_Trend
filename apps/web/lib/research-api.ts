@@ -32,6 +32,9 @@ export type StageUpdate = {
   stage: string;
   label: string;
   progress: number;
+  status?: string;
+  details?: Record<string, unknown>;
+  sequence?: number;
 };
 
 export async function runInvestigation(
@@ -40,9 +43,10 @@ export async function runInvestigation(
   mode: InvestigationMode = "standard",
 ): Promise<{ investigation: Investigation; run: ResearchRun; fallback: boolean }> {
   const progressByStage: Record<string, number> = {
-    parse_intent: 8, manager_plan: 16, prediction_market: 32, asset_market_data: 38,
-    macro: 44, news: 48, evidence_merge: 62, quantitative_forecast: 76,
-    synthesis: 86, skeptical_verification: 94, quality_gate: 98,
+    parse_intent: 6, manager_plan: 12, task_delegated: 18, worker_started: 26,
+    tool_completed: 42, evidence_handoff: 50, source_worker: 52, source_merge: 58,
+    analysis_worker: 68, analysis_merge: 74, synthesis: 82, review_worker: 88,
+    review_completed: 92, review_merge: 95, quality_gate: 98,
   };
   const stages: StageUpdate[] = [
     { stage: "parse_intent", label: "Understanding the question", progress: 8 },
@@ -68,10 +72,14 @@ export async function runInvestigation(
       const timer = window.setTimeout(() => {
         source.close();
         reject(new Error("Research stream timed out"));
-      }, mode === "deep" ? 100_000 : 45_000);
+      }, mode === "deep" ? 170_000 : mode === "standard" ? 75_000 : 30_000);
       source.addEventListener("stage", (message) => {
         const event = JSON.parse((message as MessageEvent).data) as RunEvent;
-        onStage?.({ stage: event.stage, label: event.label, progress: progressByStage[event.stage] ?? 50 });
+        onStage?.({
+          stage: event.stage, label: event.label,
+          progress: progressByStage[event.stage] ?? 50,
+          status: event.status, details: event.details, sequence: event.sequence,
+        });
       });
       source.addEventListener("complete", (message) => {
         window.clearTimeout(timer);

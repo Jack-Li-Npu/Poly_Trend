@@ -14,7 +14,7 @@ The product is deliberately a single-analyst tool. It does not include trading, 
 - Dependency-discounted, liquidity/quality/relevance weighted log-odds aggregation.
 - Strict evidence boundary: proxies explain disagreement but never silently change the estimate.
 - Gold barrier forecasts using live spot/history data and a deterministic GBM/bootstrap ensemble.
-- Adaptive Fast, Standard, and Deep worker budgets with a bounded manager-selected worker pool.
+- Mode-guaranteed manager/worker execution: Fast runs 3 source tasks, Standard runs at least 9 source/analysis/review tasks, and Deep runs at least 17 tasks including five independent Polymarket queries and two reviews.
 - Alpha Vantage price/history, FRED macro, GDELT news, and Polymarket research tools.
 - LangGraph 1.2 fan-out/fan-in runtime, checkpointed runs, one bounded verification correction, SSE progress, fork/replay, and durable investigations.
 - Optional OpenAI normal/deep routing with Gemini fallback; useful deterministic operation without any model key.
@@ -51,7 +51,13 @@ FRED_API_KEY=replace_with_your_fred_key
 
 After changing `.env`, restart both the API and worker. The provider-health endpoint at
 `http://localhost:8000/api/v1/providers/health` shows whether each key was loaded and the
-Run Inspector shows which workers and tools actually executed.
+Run Inspector shows which workers and tools actually executed. Its three-wave view records manager assignments, source-worker handoffs, cross-agent evidence exchange, independent reviews, provider failures, and a public decision ledger. The ledger contains concise, checkable decision summaries with evidence identifiers; it intentionally does not expose private hidden chain-of-thought.
+
+Research modes are execution contracts, not cosmetic labels:
+
+- **Fast:** three parallel source workers and a deterministic quality gate.
+- **Standard:** independent exact/threshold market searches, asset/macro/news sources, relationship/provenance/quantitative cross-checks, and one skeptical review.
+- **Deep:** five different Polymarket search formulations, two macro/news perspectives, resolution and contradiction audits, and two independent answer reviews. Deep is expected to take longer because it performs more real work; no artificial delay is added.
 
 ### OpenAI-compatible exchange endpoint
 

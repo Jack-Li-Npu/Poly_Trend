@@ -51,6 +51,12 @@ const relationClass: Record<MarketSnapshot["relation_type"], string> = {
   external_context: "context",
 };
 
+const modeDetails: Record<InvestigationMode, { count: string; description: string }> = {
+  fast: { count: "3 tasks", description: "Three source checks and a deterministic quality gate." },
+  standard: { count: "9+ tasks", description: "Multi-source research, three cross-analysts, and one independent review." },
+  deep: { count: "17+ tasks", description: "Five market searches, source audits, contradiction checks, and two independent reviews." },
+};
+
 function formatDate(value: string | Date, withTime = false) {
   const date = typeof value === "string" ? new Date(value) : value;
   return new Intl.DateTimeFormat("en-US", {
@@ -112,9 +118,14 @@ function HistoryChart({ market }: { market: MarketSnapshot }) {
 }
 
 function RunInspector({ run, fallback, onClose }: { run: ResearchRun; fallback: boolean; onClose: () => void }) {
-  const totalLatency = run.traces.reduce((sum, trace) => sum + trace.duration_ms, 0);
+  const totalLatency = Math.max(0, new Date(run.updated_at).getTime() - new Date(run.created_at).getTime());
   const totalCost = run.traces.reduce((sum, trace) => sum + trace.estimated_cost_usd, 0);
   const cacheHits = run.traces.filter((trace) => trace.cached).length;
+  const waves = [1, 2, 3].map((wave) => ({
+    wave,
+    label: wave === 1 ? "Source research" : wave === 2 ? "Cross-analysis" : "Independent review",
+    tasks: run.plan?.tasks.filter((task) => task.wave === wave) ?? [],
+  })).filter((item) => item.tasks.length);
   return (
     <div className="drawer-backdrop" role="presentation" onMouseDown={onClose}>
       <aside className="run-inspector" role="dialog" aria-modal="true" aria-label="Run inspector" onMouseDown={(event) => event.stopPropagation()}>
@@ -128,25 +139,62 @@ function RunInspector({ run, fallback, onClose }: { run: ResearchRun; fallback: 
         </div>
 
         <div className="runtime-metrics">
-          <div><IconClock size={17} /><span>Latency</span><strong>{(totalLatency / 1000).toFixed(2)}s</strong></div>
+          <div><IconClock size={17} /><span>Wall time</span><strong>{(totalLatency / 1000).toFixed(1)}s</strong></div>
           <div><IconDatabase size={17} /><span>Cache hits</span><strong>{cacheHits}</strong></div>
           <div><IconActivity size={17} /><span>Est. cost</span><strong>${totalCost.toFixed(4)}</strong></div>
           <div><IconCircleCheck size={17} /><span>Quality gate</span><strong>Passed</strong></div>
         </div>
 
         <section className="inspector-section">
-          <div className="section-heading"><h3>Manager plan</h3><span>{run.plan?.mode ?? "standard"}</span></div>
+          <div className="section-heading"><h3>Manager delegation</h3><span>{run.plan?.mode ?? "standard"}</span></div>
           <div className="audit-card">
             <p><IconActivity size={15} /> {run.plan ? `${run.plan.manager_provider}:${run.plan.manager_model}` : "Deterministic fallback manager"}</p>
-            <p><IconCheck size={15} /> {run.workers?.length ?? 0} workers · {run.tool_observations?.length ?? 0} tool observations</p>
+            <p><IconCheck size={15} /> {run.plan?.tasks.length ?? 0} assigned · {run.workers?.length ?? 0} completed · {run.tool_observations?.length ?? 0} tool observations</p>
             <p><IconClock size={15} /> Concurrency limit {run.plan?.budget.max_concurrency ?? 1} · tool budget {run.plan?.budget.max_tool_calls ?? 0}</p>
           </div>
-          <div className="worker-grid">
-            {run.workers?.map((worker) => (
-              <div className={`worker-card ${worker.status}`} key={worker.task_id}>
-                <strong>{worker.worker_type.replaceAll("_", " ")}</strong>
-                <span>{worker.status} · {worker.duration_ms}ms</span>
-                {worker.error && <small>{worker.error}</small>}
+          <div className="workflow-waves">
+            {waves.map(({ wave, label, tasks }) => (
+              <div className="workflow-wave" key={wave}>
+                <div className="wave-heading"><span>Wave {wave}</span><strong>{label}</strong><small>{tasks.length} assignments</small></div>
+                {tasks.map((task) => {
+                  const worker = run.workers?.find((item) => item.task_id === task.id);
+                  return (
+                    <div className={`assignment-card ${worker?.status ?? "queued"}`} key={task.id}>
+                      <div><strong>{task.agent_name}</strong><span>{worker?.status ?? "planned"} · {worker ? `${worker.duration_ms}ms` : "waiting"}</span></div>
+                      <p>{task.objective}</p>
+                      <small>{task.tools.join(" + ")} → {task.deliver_to}{task.depends_on.length ? ` · waits for ${task.depends_on.length}` : ""}{worker ? ` · ${worker.output_count} outputs` : ""}</small>
+                      {worker?.public_summary && <em>{worker.public_summary}</em>}
+                      {worker?.error && <em className="worker-error">{worker.error}</em>}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="inspector-section">
+          <div className="section-heading"><h3>Agent handoff log</h3><span>{run.agent_messages?.length ?? 0} messages</span></div>
+          <p className="section-note">Assignments and evidence packets exchanged between agents. Evidence IDs link each handoff to stored sources.</p>
+          <div className="message-bus">
+            {run.agent_messages?.map((item) => (
+              <div className="message-row" key={item.id}>
+                <span>{item.sequence}</span>
+                <div><strong>{item.from_agent} → {item.to_agent}</strong><p>{item.summary}</p><small>{item.message_type.replaceAll("_", " ")} · {item.evidence_ids.length} evidence IDs</small></div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="inspector-section">
+          <div className="section-heading"><h3>Public decision ledger</h3><span>{run.decision_records?.length ?? 0} decisions</span></div>
+          <p className="section-note">Checkable decision summaries and citations are shown here; private hidden chain-of-thought is not exposed.</p>
+          <div className="decision-list">
+            {run.decision_records?.map((item) => (
+              <div className="decision-card" key={item.id}>
+                <div><strong>{item.agent}</strong><span>{percent(item.confidence)} confidence</span></div>
+                <h4>{item.decision}</h4><p>{item.rationale_summary}</p>
+                <small>{item.evidence_ids.length} linked evidence IDs</small>
               </div>
             ))}
           </div>
@@ -202,6 +250,7 @@ export function ProbabilityWorkspace() {
   const [zoom, setZoom] = useState(1);
   const [loading, setLoading] = useState(false);
   const [stage, setStage] = useState<StageUpdate>({ stage: "complete", label: "Run completed", progress: 100 });
+  const [liveEvents, setLiveEvents] = useState<StageUpdate[]>([]);
   const [fallback, setFallback] = useState(true);
   const [saved, setSaved] = useState(false);
   const [daily, setDaily] = useState(false);
@@ -219,7 +268,7 @@ export function ProbabilityWorkspace() {
     });
     return inclusionChanged ? recomputeAnswer(markets) : run.answer ?? recomputeAnswer(markets);
   }, [markets, run]);
-  const answerTitle = run.intent?.proposition?.trim() || run.query;
+  const answerTitle = run.query;
   const selectedMarket = markets.find((market) => market.id === selectedId) ?? markets[0];
   const includedCount = markets.filter((market) => market.included).length;
 
@@ -229,7 +278,11 @@ export function ProbabilityWorkspace() {
     if (cleanQuery.length < 4 || loading) return;
     setLoading(true);
     setShowRunStatus(true);
-    const result = await runInvestigation(cleanQuery, setStage, mode);
+    setLiveEvents([]);
+    const result = await runInvestigation(cleanQuery, (update) => {
+      setStage(update);
+      setLiveEvents((current) => [...current.filter((item) => item.sequence !== update.sequence), update].slice(-8));
+    }, mode);
     setInvestigation(result.investigation);
     setRun(result.run);
     setMarkets(result.run.markets.map((market) => ({ ...market })));
@@ -270,7 +323,7 @@ export function ProbabilityWorkspace() {
       <style>{`
         .command-row{grid-template-columns:minmax(0,1fr) auto 306px;gap:10px}
         .mode-switcher{height:52px;display:flex;align-items:center;padding:4px;border:1px solid var(--line);border-radius:8px;background:#fff}
-        .mode-switcher button{height:40px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:var(--muted);font-size:9px;text-transform:capitalize;cursor:pointer}
+        .mode-switcher button{height:40px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:var(--muted);font-size:9px;text-transform:capitalize;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}.mode-switcher button small{font-size:7px;text-transform:none;opacity:.8}
         .mode-switcher button.active{background:var(--violet-soft);color:var(--violet-dark);font-weight:700}
         .analysis-layout{grid-template-columns:280px minmax(560px,1fr) 340px}
         .map-stage{height:clamp(560px,calc(100vh - 154px),620px);align-self:start}
@@ -283,6 +336,12 @@ export function ProbabilityWorkspace() {
         .worker-card{display:flex;flex-direction:column;gap:4px;padding:10px;border:1px solid var(--line);border-left:3px solid var(--green);border-radius:7px}
         .worker-card.failed{border-left-color:var(--red)}.worker-card strong{font-size:10px;text-transform:capitalize}
         .worker-card span,.worker-card small{color:var(--muted);font-size:8.5px;line-height:1.35}
+        .workflow-waves{display:grid;gap:12px;margin-top:12px}.workflow-wave{display:grid;gap:6px;padding-left:12px;border-left:2px solid var(--violet-soft)}
+        .wave-heading{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:7px}.wave-heading>span{padding:3px 6px;border-radius:10px;background:var(--violet-soft);color:var(--violet-dark);font-size:8px;font-weight:750}.wave-heading strong{font-size:10px}.wave-heading small{color:var(--muted);font-size:8px}
+        .assignment-card{display:grid;gap:5px;padding:10px;border:1px solid var(--line);border-radius:7px;background:#fff}.assignment-card.completed{border-left:3px solid var(--green)}.assignment-card.failed{border-left:3px solid var(--red)}.assignment-card>div{display:flex;justify-content:space-between;gap:8px}.assignment-card strong{font-size:10px}.assignment-card span,.assignment-card small{color:var(--muted);font-size:8px}.assignment-card p{margin:0;color:#4e4755;font-size:9px;line-height:1.45}.assignment-card em{font-size:8.5px;line-height:1.4;color:#36715a;font-style:normal}.assignment-card .worker-error{color:var(--red)}
+        .section-note{margin:-3px 0 10px;color:var(--muted);font-size:9px;line-height:1.45}.message-bus,.decision-list{display:grid;gap:6px}.message-row{display:grid;grid-template-columns:24px 1fr;gap:8px;padding:9px;border:1px solid var(--line);border-radius:7px}.message-row>span{width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--soft-bg);color:var(--violet-dark);font-size:8px;font-weight:700}.message-row strong{font-size:9px}.message-row p{margin:3px 0;color:#514a58;font-size:8.5px;line-height:1.4}.message-row small{color:var(--muted);font-size:8px}.decision-card{padding:10px;border:1px solid var(--line);border-radius:7px}.decision-card>div{display:flex;justify-content:space-between}.decision-card strong{font-size:9px}.decision-card span,.decision-card small{color:var(--muted);font-size:8px}.decision-card h4{margin:6px 0 3px;font-size:10px}.decision-card p{margin:0 0 5px;color:#514a58;font-size:8.5px;line-height:1.45}
+        .live-event-list{display:grid;gap:5px;margin:10px 0}.live-event{display:grid;grid-template-columns:7px 1fr;gap:7px;align-items:start;color:#554e5d;font-size:8.5px;line-height:1.35}.live-event:before{content:"";width:6px;height:6px;margin-top:3px;border-radius:50%;background:var(--violet)}
+        .mode-explainer{grid-column:1/-1;margin:-5px 0 0;color:var(--muted);font-size:8.5px;text-align:center}
         @media(max-height:850px){.map-stage{height:calc(100vh - 154px);min-height:520px}.probability-graph{min-height:0}}
         @media(max-width:900px){.command-row{grid-template-columns:1fr}.mode-switcher{justify-content:center}.map-stage{height:620px}}
       `}</style>
@@ -317,13 +376,13 @@ export function ProbabilityWorkspace() {
         </form>
         <div className="mode-switcher" aria-label="Research depth">
           {(["fast", "standard", "deep"] as InvestigationMode[]).map((item) => (
-            <button type="button" key={item} className={mode === item ? "active" : ""} onClick={() => setMode(item)}>{item}</button>
+            <button type="button" key={item} title={modeDetails[item].description} className={mode === item ? "active" : ""} onClick={() => setMode(item)}>{item}<small>{modeDetails[item].count}</small></button>
           ))}
         </div>
         <div className="run-status-wrap">
           <button type="button" className={`run-status ${loading ? "is-running" : ""}`} onClick={() => setShowRunStatus((current) => !current)}>
             {loading ? <IconRefresh className="spin" size={19} /> : <IconCircleCheck size={19} />}
-            <span><strong>{loading ? stage.label : "Run completed"}</strong><small>{loading ? `${stage.progress}% complete` : `${formatDate(run.updated_at, true)} · 1.2s`}</small></span>
+            <span><strong>{loading ? stage.label : "Run completed"}</strong><small>{loading ? `${stage.progress}% · ${liveEvents.length} visible events` : `${formatDate(run.updated_at, true)} · ${((new Date(run.updated_at).getTime() - new Date(run.created_at).getTime()) / 1000).toFixed(1)}s`}</small></span>
             <IconChevronDown size={16} />
           </button>
           {showRunStatus && (
@@ -331,6 +390,7 @@ export function ProbabilityWorkspace() {
               <div className="progress-track"><span style={{ width: `${stage.progress}%` }} /></div>
               <strong>{loading ? stage.label : answer.answer_kind === "insufficient" ? "Evidence gap verified" : "Evidence verified"}</strong>
               <p>{fallback ? "Local deterministic fallback is active; the full interface remains functional without an LLM key." : "Live provider data and the production research graph completed successfully."}</p>
+              {loading && <div className="live-event-list">{liveEvents.slice(-5).map((item, index) => <div className="live-event" key={`${item.sequence ?? index}-${item.stage}`}>{item.label}</div>)}</div>}
               <button type="button" onClick={() => setShowRunInspector(true)}><IconActivity size={15} />Inspect structured run data</button>
             </div>
           )}

@@ -230,9 +230,15 @@ class RunBudget(BaseModel):
 class ResearchTask(BaseModel):
     id: str
     worker_type: str
+    agent_name: str = "Legacy worker"
     objective: str
     tools: list[str] = Field(default_factory=list)
     depends_on: list[str] = Field(default_factory=list)
+    wave: int = Field(default=1, ge=1, le=3)
+    query_variant: str | None = None
+    deliver_to: str = "evidence_desk"
+    success_criteria: list[str] = Field(default_factory=list)
+    parameters: dict[str, Any] = Field(default_factory=dict)
     required: bool = True
 
 
@@ -263,6 +269,8 @@ class ToolObservation(BaseModel):
 class WorkerRun(BaseModel):
     task_id: str
     worker_type: str
+    agent_name: str = "Legacy worker"
+    wave: int = 1
     objective: str
     status: WorkerStatus
     started_at: datetime
@@ -270,7 +278,41 @@ class WorkerRun(BaseModel):
     duration_ms: int
     tool_calls: int = 0
     output_count: int = 0
+    input_evidence_ids: list[str] = Field(default_factory=list)
+    output_evidence_ids: list[str] = Field(default_factory=list)
+    public_summary: str = ""
     error: str | None = None
+
+
+class AgentMessage(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    sequence: int
+    from_agent: str
+    to_agent: str
+    message_type: str
+    summary: str
+    task_id: str | None = None
+    evidence_ids: list[str] = Field(default_factory=list)
+    timestamp: datetime = Field(default_factory=utc_now)
+
+
+class DecisionRecord(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    agent: str
+    decision: str
+    rationale_summary: str
+    evidence_ids: list[str] = Field(default_factory=list)
+    confidence: float = Field(default=0.5, ge=0, le=1)
+    timestamp: datetime = Field(default_factory=utc_now)
+
+
+class AnalysisFinding(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    task_id: str
+    agent_name: str
+    summary: str
+    evidence_ids: list[str] = Field(default_factory=list)
+    confidence: float = Field(default=0.5, ge=0, le=1)
 
 
 class RunQualityReport(BaseModel):
@@ -362,6 +404,9 @@ class ResearchRun(BaseModel):
     asset_snapshot: AssetSnapshot | None = None
     forecast: ForecastEstimate | None = None
     quality_report: RunQualityReport | None = None
+    agent_messages: list[AgentMessage] = Field(default_factory=list)
+    decision_records: list[DecisionRecord] = Field(default_factory=list)
+    analysis_findings: list[AnalysisFinding] = Field(default_factory=list)
     cancelled: bool = False
 
 

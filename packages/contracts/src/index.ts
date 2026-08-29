@@ -19,6 +19,9 @@ export type ResearchTask = components["schemas"]["ResearchTask"];
 export type WorkerRun = components["schemas"]["WorkerRun"];
 export type ToolObservation = components["schemas"]["ToolObservation"];
 export type RunQualityReport = components["schemas"]["RunQualityReport"];
+export type AgentMessage = components["schemas"]["AgentMessage"];
+export type DecisionRecord = components["schemas"]["DecisionRecord"];
+export type AnalysisFinding = components["schemas"]["AnalysisFinding"];
 
 export const API_VERSION = "v1" as const;
 export const API_PREFIX = `/api/${API_VERSION}` as const;

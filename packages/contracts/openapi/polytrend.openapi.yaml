@@ -338,6 +338,79 @@ paths:
                 title: Response Provider Health Api V1 Providers Health Get
 components:
   schemas:
+    AgentMessage:
+      properties:
+        id:
+          type: string
+          title: Id
+        sequence:
+          type: integer
+          title: Sequence
+        from_agent:
+          type: string
+          title: From Agent
+        to_agent:
+          type: string
+          title: To Agent
+        message_type:
+          type: string
+          title: Message Type
+        summary:
+          type: string
+          title: Summary
+        task_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Task Id
+        evidence_ids:
+          items:
+            type: string
+          type: array
+          title: Evidence Ids
+        timestamp:
+          type: string
+          format: date-time
+          title: Timestamp
+      type: object
+      required:
+      - sequence
+      - from_agent
+      - to_agent
+      - message_type
+      - summary
+      title: AgentMessage
+    AnalysisFinding:
+      properties:
+        id:
+          type: string
+          title: Id
+        task_id:
+          type: string
+          title: Task Id
+        agent_name:
+          type: string
+          title: Agent Name
+        summary:
+          type: string
+          title: Summary
+        evidence_ids:
+          items:
+            type: string
+          type: array
+          title: Evidence Ids
+        confidence:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Confidence
+          default: 0.5
+      type: object
+      required:
+      - task_id
+      - agent_name
+      - summary
+      title: AnalysisFinding
     AnswerKind:
       type: string
       enum:
@@ -413,6 +486,41 @@ components:
       - limited
       - insufficient
       title: CoverageState
+    DecisionRecord:
+      properties:
+        id:
+          type: string
+          title: Id
+        agent:
+          type: string
+          title: Agent
+        decision:
+          type: string
+          title: Decision
+        rationale_summary:
+          type: string
+          title: Rationale Summary
+        evidence_ids:
+          items:
+            type: string
+          type: array
+          title: Evidence Ids
+        confidence:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Confidence
+          default: 0.5
+        timestamp:
+          type: string
+          format: date-time
+          title: Timestamp
+      type: object
+      required:
+      - agent
+      - decision
+      - rationale_summary
+      title: DecisionRecord
     EvidenceGraph:
       properties:
         query_node:
@@ -1278,6 +1386,21 @@ components:
           anyOf:
           - $ref: '#/components/schemas/RunQualityReport'
           - type: 'null'
+        agent_messages:
+          items:
+            $ref: '#/components/schemas/AgentMessage'
+          type: array
+          title: Agent Messages
+        decision_records:
+          items:
+            $ref: '#/components/schemas/DecisionRecord'
+          type: array
+          title: Decision Records
+        analysis_findings:
+          items:
+            $ref: '#/components/schemas/AnalysisFinding'
+          type: array
+          title: Analysis Findings
         cancelled:
           type: boolean
           title: Cancelled
@@ -1295,6 +1418,10 @@ components:
         worker_type:
           type: string
           title: Worker Type
+        agent_name:
+          type: string
+          title: Agent Name
+          default: Legacy worker
         objective:
           type: string
           title: Objective
@@ -1308,6 +1435,30 @@ components:
             type: string
           type: array
           title: Depends On
+        wave:
+          type: integer
+          maximum: 3.0
+          minimum: 1.0
+          title: Wave
+          default: 1
+        query_variant:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Query Variant
+        deliver_to:
+          type: string
+          title: Deliver To
+          default: evidence_desk
+        success_criteria:
+          items:
+            type: string
+          type: array
+          title: Success Criteria
+        parameters:
+          additionalProperties: true
+          type: object
+          title: Parameters
         required:
           type: boolean
           title: Required
@@ -1617,6 +1768,14 @@ components:
         worker_type:
           type: string
           title: Worker Type
+        agent_name:
+          type: string
+          title: Agent Name
+          default: Legacy worker
+        wave:
+          type: integer
+          title: Wave
+          default: 1
         objective:
           type: string
           title: Objective
@@ -1641,6 +1800,20 @@ components:
           type: integer
           title: Output Count
           default: 0
+        input_evidence_ids:
+          items:
+            type: string
+          type: array
+          title: Input Evidence Ids
+        output_evidence_ids:
+          items:
+            type: string
+          type: array
+          title: Output Evidence Ids
+        public_summary:
+          type: string
+          title: Public Summary
+          default: ''
         error:
           anyOf:
           - type: string

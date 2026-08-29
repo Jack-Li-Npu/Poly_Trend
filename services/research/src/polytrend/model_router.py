@@ -8,7 +8,7 @@ from typing import Any
 import httpx
 
 from .config import Settings
-from .models import MarketImpliedAnswer, MarketSnapshot, QueryIntent
+from .models import EvidenceItem, MarketImpliedAnswer, MarketSnapshot, QueryIntent
 
 
 @dataclass(slots=True)
@@ -24,6 +24,16 @@ class ModelResult:
 @dataclass(slots=True)
 class PlanModelResult:
     workers: list[str]
+    provider: str
+    model: str
+    estimated_cost_usd: float = 0
+
+
+@dataclass(slots=True)
+class ReviewModelResult:
+    verdict: str
+    concerns: list[str]
+    confidence: float
     provider: str
     model: str
     estimated_cost_usd: float = 0
@@ -108,6 +118,56 @@ class ModelRouter:
             self.last_error = f"Manager: {type(exc).__name__}: {exc}"
             return PlanModelResult(fallback, "deterministic", "manager-policy-v1")
 
+    async def review_answer(
+        self,
+        query: str,
+        answer: MarketImpliedAnswer,
+        markets: list[MarketSnapshot],
+        context: list[EvidenceItem],
+        reviewer_role: str,
+    ) -> ReviewModelResult:
+        """Return a public audit result, never private chain-of-thought."""
+        evidence_ids = {market.id for market in markets} | {item.id for item in context}
+        missing = [item for item in answer.evidence_ids if item not in evidence_ids]
+        deterministic_concerns: list[str] = []
+        if missing:
+            deterministic_concerns.append(f"Missing stored evidence IDs: {', '.join(missing[:4])}")
+        if answer.probability is not None and not answer.evidence_ids:
+            deterministic_concerns.append("The numerical answer has no supporting evidence IDs.")
+        key = os.getenv("OPENAI_API_KEY")
+        if not key:
+            return ReviewModelResult(
+                verdict="revise" if deterministic_concerns else "pass",
+                concerns=deterministic_concerns, confidence=0.95,
+                provider="deterministic", model="evidence-auditor-v1",
+            )
+        prompt = (
+            "Act as an independent evidence auditor. Return JSON only with keys verdict "
+            "('pass' or 'revise'), concerns (at most 3 concise strings), and confidence (0..1). "
+            "Report only checkable issues. Do not reveal private reasoning and do not invent facts.\n"
+            + json.dumps({
+                "reviewer_role": reviewer_role, "query": query,
+                "answer": answer.model_dump(mode="json"),
+                "available_evidence_ids": sorted(evidence_ids),
+                "market_labels": [market.question for market in markets[:20]],
+            })
+        )
+        try:
+            payload = await self._openai_post("responses", key, {"model": self.config.openai_deep_model, "input": prompt})
+            decoded = json.loads(self._responses_text(payload).strip().removeprefix("```json").removesuffix("```").strip())
+            verdict = str(decoded.get("verdict", "revise")).lower()
+            concerns = [str(item)[:220] for item in decoded.get("concerns", [])[:3]]
+            confidence = min(1.0, max(0.0, float(decoded.get("confidence", 0.6))))
+            if verdict not in {"pass", "revise"}:
+                raise ValueError("review verdict must be pass or revise")
+            return ReviewModelResult(verdict, concerns, confidence, "openai", self.config.openai_deep_model)
+        except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+            self.last_error = f"Reviewer: {type(exc).__name__}: {exc}"
+            return ReviewModelResult(
+                verdict="revise" if deterministic_concerns else "pass",
+                concerns=deterministic_concerns, confidence=0.9,
+                provider="deterministic", model="evidence-auditor-v1",
+            )
     def _prompt(self, query: str, answer: MarketImpliedAnswer, markets: list[MarketSnapshot]) -> str:
         evidence = [
             {

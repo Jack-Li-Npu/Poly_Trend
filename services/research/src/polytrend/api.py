@@ -204,6 +204,8 @@ async def get_run_trace(run_id: str, request: Request) -> dict[str, Any]:
         raise HTTPException(404, "run not found")
     return {
         "plan": run.plan, "workers": run.workers, "tool_observations": run.tool_observations,
+        "agent_messages": run.agent_messages, "decision_records": run.decision_records,
+        "analysis_findings": run.analysis_findings,
         "traces": run.traces, "quality_report": run.quality_report,
     }
 

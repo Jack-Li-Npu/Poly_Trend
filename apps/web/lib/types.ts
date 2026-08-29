@@ -110,11 +110,23 @@ export interface SourceCitation { evidence_id: string; title: string; source: st
 export interface EvidenceNode { id: string; kind: string; label: string; value?: string | null; source?: string | null; relevance: number; included: boolean; evidence_id?: string | null; }
 export interface EvidenceGraph { query_node: EvidenceNode; nodes: EvidenceNode[]; edges: RelationshipEdge[]; }
 export interface RunBudget { max_workers: number; max_tool_calls: number; max_concurrency: number; timeout_seconds: number; }
-export interface ResearchTask { id: string; worker_type: string; objective: string; tools: string[]; depends_on: string[]; required: boolean; }
+export interface ResearchTask {
+  id: string; worker_type: string; agent_name: string; objective: string; tools: string[];
+  depends_on: string[]; wave: number; query_variant?: string | null; deliver_to: string;
+  success_criteria: string[]; parameters: Record<string, unknown>; required: boolean;
+}
 export interface ResearchPlan { mode: InvestigationMode; tasks: ResearchTask[]; budget: RunBudget; stopping_conditions: string[]; manager_provider: string; manager_model: string; }
-export interface WorkerRun { task_id: string; worker_type: string; objective: string; status: string; started_at: string; completed_at: string; duration_ms: number; tool_calls: number; output_count: number; error?: string | null; }
+export interface WorkerRun {
+  task_id: string; worker_type: string; agent_name: string; wave: number; objective: string;
+  status: string; started_at: string; completed_at: string; duration_ms: number;
+  tool_calls: number; output_count: number; input_evidence_ids: string[];
+  output_evidence_ids: string[]; public_summary: string; error?: string | null;
+}
 export interface ToolObservation { id: string; task_id: string; tool: string; provider: string; status: string; started_at: string; completed_at: string; duration_ms: number; cached: boolean; retry_count: number; evidence_ids: string[]; error?: string | null; }
 export interface RunQualityReport { passed: boolean; supported_numeric_claims: number; missing_evidence_ids: string[]; bounded_corrections: number; warnings: string[]; }
+export interface AgentMessage { id: string; sequence: number; from_agent: string; to_agent: string; message_type: string; summary: string; task_id?: string | null; evidence_ids: string[]; timestamp: string; }
+export interface DecisionRecord { id: string; agent: string; decision: string; rationale_summary: string; evidence_ids: string[]; confidence: number; timestamp: string; }
+export interface AnalysisFinding { id: string; task_id: string; agent_name: string; summary: string; evidence_ids: string[]; confidence: number; }
 
 export interface MarketImpliedAnswer {
   conclusion: string;
@@ -197,6 +209,9 @@ export interface ResearchRun {
   asset_snapshot?: AssetSnapshot | null;
   forecast?: ForecastEstimate | null;
   quality_report?: RunQualityReport | null;
+  agent_messages?: AgentMessage[];
+  decision_records?: DecisionRecord[];
+  analysis_findings?: AnalysisFinding[];
   cancelled?: boolean;
 }
 

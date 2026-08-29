@@ -7,8 +7,18 @@ from fastapi.testclient import TestClient
 from polytrend.api import app
 
 
-def test_investigation_lifecycle() -> None:
+def test_investigation_lifecycle(monkeypatch) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.setenv("GEMINI_API_KEY", "")
     with TestClient(app) as client:
+        async def provider_search(_query: str, _limit: int = 30):
+            return []
+
+        async def news_search(_query: str, _limit: int = 6):
+            return [], False, 0
+
+        monkeypatch.setattr(app.state.provider, "search", provider_search)
+        monkeypatch.setattr(app.state.research_tools, "search_news", news_search)
         created = client.post("/api/v1/investigations", json={"query": "Will the U.S. enter a recession before the end of 2027?"})
         assert created.status_code == 201
         investigation = created.json()
