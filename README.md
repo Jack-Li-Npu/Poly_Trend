@@ -10,6 +10,8 @@ The product is deliberately a single-analyst tool. It does not include trading, 
 
 See the [installation and usage guide](docs/USER_GUIDE.md) for setup, provider configuration, and reproducible example questions.
 
+All application copy, API messages, source documentation, and setup instructions are maintained in English. The obsolete V1 application tree and duplicate language-specific guides were removed during the V2 consolidation; the original implementation remains available in Git history at commit `de14364`.
+
 ## What is implemented
 
 - Graph-first Probability Map with a ranked-list alternative and evidence inspector.
