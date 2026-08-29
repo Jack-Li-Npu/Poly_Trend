@@ -20,6 +20,7 @@
     "contracts:check": "npm run typecheck --workspace @polytrend/contracts",
     "eval:validate": "python evals/retrieval/validate_dataset.py",
     "eval:retrieval": "python evals/retrieval/evaluate.py",
+    "eval:orchestration": "python evals/orchestration_benchmark.py --tasks 90 --concurrency 8",
     "stack:up": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1",
     "stack:health": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/health.ps1",
     "stack:down": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/stop.ps1"

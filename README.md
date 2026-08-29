@@ -84,6 +84,7 @@ services/research                FastAPI + LangGraph research runtime
 packages/contracts               OpenAPI schema and generated TypeScript types
 infra/postgres                   pgvector schema and indexes
 evals/retrieval                  50-question labelled benchmark
+evals/orchestration_benchmark.py 20/40/90 bounded worker-pool benchmark
 .agents/skills/polytrend-research Project-local analyst skill
 ```
 
@@ -95,6 +96,7 @@ npm run build
 .venv\Scripts\python.exe -m pytest services/research/tests
 .venv\Scripts\python.exe evals/retrieval/validate_dataset.py
 .venv\Scripts\python.exe evals/retrieval/evaluate.py
+.venv\Scripts\python.exe evals/orchestration_benchmark.py --tasks 90 --concurrency 8
 ```
 
 Market prices are signals, not objective truth or financial advice. Every point estimate includes its as-of time, included evidence, range, coverage state, method, freshness, and caveats.
