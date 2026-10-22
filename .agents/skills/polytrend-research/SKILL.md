@@ -1,29 +1,17 @@
 ---
 name: polytrend-research
-description: Investigate measurable questions with Poly Trend prediction-market evidence. Use when a user asks to search markets, inspect a market, run or revisit an investigation, compare market-implied probabilities, or explain which evidence entered an estimate.
+description: Inspect Poly Trend V3 event expectations and saved research evidence through its read-only MCP tools.
 ---
 
-# Poly Trend Research
+# Poly Trend V3 research
 
-Use the project MCP server configured in `.mcp.json`. It exposes the production research service; do not duplicate retrieval or aggregation logic in the skill.
+The project server `.mcp.json` exposes `search_events` and `get_research_run`. Inspect tool schemas
+before calling. Research creation, revisions, refresh, replay and scenarios use the V3 application
+or its documented REST API; the MCP adapter is intentionally read-only.
 
-## Workflow
-
-1. Call `search_markets` to check whether the question has direct, resolvable market coverage.
-2. Call `run_investigation` for a complete answer. Preserve the returned investigation and run identifiers.
-3. Use `get_market` when resolution wording, spread, liquidity, freshness, or inclusion needs explanation.
-4. Use `get_investigation` to revisit saved work.
-
-## Evidence rules
-
-- Describe the output as a market-implied estimate, never objective truth or financial advice.
-- Only direct, duplicate, and logically complementary markets may enter the numerical estimate.
-- State when an inverse outcome was re-oriented.
-- Keep proxy and external context separate; they may explain disagreement but may not silently move the estimate.
-- If coverage is insufficient, report that state without inventing a probability.
-- Include the as-of time, market range, coverage, methodology, caveats, and evidence IDs when presenting a number.
-- Never expose hidden model reasoning, provider keys, or secrets. Structured trace metadata is allowed.
-
-## Output shape
-
-Lead with the market-implied answer and its coverage state. Then give up to three takeaways, followed by included evidence and the most important caveat. Keep the response analytical and concise.
+State exact event wording and deadline, receipt time, source mode and quote quality. Treat original
+marginals, verified logical bounds, descriptive correlations, hypotheses and user scenarios as
+separate claim types. Source linkage does not imply empirical validation. Report insufficient
+coverage plainly. Do not infer historical books/holders from charts, fabricate return estimates,
+conflate volume with capital inflow, or multiply marginal probabilities without a declared
+independence assumption. Never disclose keys or raw provider exceptions.

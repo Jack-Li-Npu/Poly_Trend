@@ -1,114 +1,104 @@
-# Poly Trend V2
+# Poly Trend V3
 
-Poly Trend V2 is an adaptive multi-agent research terminal. It separates direct prediction-market answers from transparent asset-price scenario forecasts:
+**Event Expectations & Asset Response Lab**
 
-`question → manager plan → parallel specialists → evidence merge → deterministic analytics → skeptical verification → saved run`
+We investigate when prediction-market expectations add information to investment research,
+and expose the evidence when they do not.
 
-The product is deliberately a single-analyst tool. It does not include trading, portfolios, authentication, or report-style agent demonstrations.
+V3 connects exact event contracts to probability structure, public cross-asset histories,
+challengeable investment theses and reproducible calculations. It is a research application
+and hypothetical simulation environment. It contains no wallet, signing or order-placement code.
 
-![Poly Trend V2 recession research example](docs/images/poly-trend-recession-case.png)
+![Poly Trend V3 recorded event research workspace](docs/images/poly-trend-v3-desktop.png)
 
-See the [installation and usage guide](docs/USER_GUIDE.md) for setup, provider configuration, and reproducible example questions.
+## Run locally
 
-All application copy, API messages, source documentation, and setup instructions are maintained in English. The obsolete V1 application tree and duplicate language-specific guides were removed during the V2 consolidation; the original implementation remains available in Git history at commit `de14364`.
+Requires Node 22, Python 3.12+, npm and [uv](https://docs.astral.sh/uv/).
 
-## What is implemented
-
-- Graph-first Probability Map with a ranked-list alternative and evidence inspector.
-- Concurrent Gamma, full-text, local dense, and entity/date candidate generation; Reciprocal Rank Fusion and deterministic reranking.
-- Direct, duplicate, complement, proxy, correlation, and external-context relationships.
-- Dependency-discounted, liquidity/quality/relevance weighted log-odds aggregation.
-- Strict evidence boundary: proxies explain disagreement but never silently change the estimate.
-- Gold barrier forecasts using live spot/history data and a deterministic GBM/bootstrap ensemble.
-- Mode-guaranteed manager/worker execution: Fast runs 3 source tasks, Standard runs at least 9 source/analysis/review tasks, and Deep runs at least 17 tasks including five independent Polymarket queries and two reviews.
-- Alpha Vantage price/history, FRED macro, GDELT news, and Polymarket research tools.
-- LangGraph 1.2 fan-out/fan-in runtime, checkpointed runs, one bounded verification correction, SSE progress, fork/replay, and durable investigations.
-- Optional OpenAI normal/deep routing with Gemini fallback; useful deterministic operation without any model key.
-- PostgreSQL/pgvector and Redis production stack, plus SQLite-WAL local fallback.
-- Daily 08:00 Asia/Shanghai refresh, MCP adapter, project-local skill, OpenAPI contracts, retrieval benchmark, and CI.
-
-## Launch
-
-### Complete stack with Docker
-
-```powershell
-Copy-Item .env.example .env
-docker compose up --build
+```sh
+npm ci
+uv sync --project services/research --extra dev --frozen
+uv run --project services/research polytrend-research
+# In a second terminal:
+npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). API documentation is at [http://localhost:8000/docs](http://localhost:8000/docs).
+Open http://localhost:3000. The web app proxies `/api/v3` through its server to
+`INTERNAL_API_URL` (default http://127.0.0.1:8000). The API exposes docs at
+http://127.0.0.1:8000/docs. SQLite stores local work in `data/polytrend-v3.db`.
+Copy `.env.example` for available settings; your shell/process manager must load server variables.
+Next.js reads root/web `.env.local` through its normal environment handling.
 
-Provider keys are optional. Without them, retrieval, analytics, verification, persistence, the graph workspace, and seeded demonstration remain useful.
-Asset-price forecasts deliberately return `Insufficient evidence` until a price-data key is configured.
+No key is required for public event discovery, CLOB snapshots, Coinbase BTC candles or
+Treasury context. Alpha Vantage ETF data and FRED vintages need optional keys. Provider blocks,
+rate limits and absent keys remain visible gaps. CSV imports can supply attributable daily asset
+history with explicit adjustment metadata; imports cannot certify their own historical availability.
 
-### Price, macro, and news providers
+For Docker, set `POSTGRES_PASSWORD` in `.env`, then `docker compose up --build -d`.
+This uses PostgreSQL and the same run service. Optional `--profile worker` adds a recovery/refresh
+worker; database leases prevent duplicate run execution. The API already schedules enabled cases.
+Docker is a single-user research deployment; add authentication and access controls before shared hosting.
 
-Put provider keys in the root `.env` file, never in the browser application:
+## Research workflow
 
-```dotenv
-# Required for Gold spot/history and a numerical Gold barrier forecast
-ALPHA_VANTAGE_API_KEY=replace_with_your_alpha_vantage_key
+1. Discover an exact event and inspect its deadline, outcome/token identities, rules and source.
+2. Save a case with an event → mechanism → asset thesis and measurable invalidation conditions.
+3. Refresh to capture immutable evidence. Inspect quote quality, missing history, verified logical
+   relationships, descriptive asset response and competing explanations.
+4. Declare scenario payoffs and costs separately from observed data. Break-even probabilities
+   and joint-probability bounds are calculated on the server.
+5. Replay pinned evidence without network/model calls, or apply a historical cutoff that excludes
+   subsequently available observations. Export the full run, input hashes and source payloads.
 
-# Optional official macro context
-FRED_API_KEY=replace_with_your_fred_key
+The interface has explicit **Live research** and **Recorded investigations** modes. Recordings
+never replace a failed live request. Attention rankings identify research questions, not trades.
+Historical associations are descriptive until independently evaluated across events. A small or
+poorly covered sample produces an insufficient-evidence result.
 
-# GDELT and Polymarket use their public endpoints and do not need keys
-```
+## What changed in V3
 
-After changing `.env`, restart both the API and worker. The provider-health endpoint at
-`http://localhost:8000/api/v1/providers/health` shows whether each key was loaded and the
-Provider failures are reflected in answer coverage and caveats rather than being silently ignored. Evidence links, resolution wording, freshness, and inclusion state remain available directly in the research workspace.
+- Canonical event, observation, case, claim, run and simulation contracts; generated frontend types.
+- Gamma full families; CLOB books/fees/history; Data API **v2** trade, holder, position, interest and
+  resolution capture; opt-in market stream with REST recovery and bounded watches.
+- One LangGraph application service for manual runs, refresh, cancellation, restart recovery and replay.
+- Content-addressed evidence snapshots, immutable source records and relational SQLite/PostgreSQL storage.
+- Logical consistency and distributions only for verified relationships; original quotes remain visible.
+- Bidirectional 1/5/20-session response diagnostics, explicit feed/adjustment gaps and independent-event limits.
+- Saved thesis revisions, rule evaluation, scenario sensitivity, Frechet bounds and paper close-mark evaluation.
 
-Research modes are execution contracts, not cosmetic labels:
+The V2 seed answer, giant probability forecast, duplicated browser math, generic gold forecast,
+legacy refresh engine and task-count benchmark claims are retired. `/api/v1/*` and `/v1/*` return 410.
+The older checkout is not migrated automatically; V3 uses a separate database and branch.
 
-- **Fast:** three parallel source workers and a deterministic quality gate.
-- **Standard:** independent exact/threshold market searches, asset/macro/news sources, relationship/provenance/quantitative cross-checks, and one skeptical review.
-- **Deep:** five different Polymarket search formulations, two macro/news perspectives, resolution and contradiction audits, and two independent answer reviews. Deep is expected to take longer because it performs more real work; no artificial delay is added.
+## Verify and reproduce
 
-### OpenAI-compatible exchange endpoint
-
-Keep model credentials on the backend. Copy `.env.example` to `.env`, then edit these four lines in the root `.env` file:
-
-```dotenv
-OPENAI_API_KEY=replace_with_your_exchange_api_key
-OPENAI_BASE_URL=https://api.3366.ai
-OPENAI_API_MODE=auto
-OPENAI_MODEL=replace_with_a_model_id_supported_by_your_exchange
-```
-
-`OPENAI_BASE_URL` accepts either a host such as `https://api.3366.ai` or a versioned base such as `https://api.3366.ai/v1`. For a custom host, Poly Trend supports both root-style routes (`/responses`) and standard versioned routes (`/v1/responses`). In `auto` mode, it tries the Responses API and then Chat Completions. Never place the key in `NEXT_PUBLIC_*`, frontend code, or browser storage.
-
-Restart the API and worker after editing `.env`. For the Windows local stack, run `scripts/stop-local.ps1` and then `scripts/dev-local.ps1`. For Docker, recreate the services with `docker compose up --build --force-recreate`.
-
-### Windows local launch without Docker
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev-local.ps1
-```
-
-Stop it with `scripts/stop-local.ps1`.
-
-## Repository map
-
-```text
-apps/web                         Next.js analyst terminal
-services/research                FastAPI + LangGraph research runtime
-packages/contracts               OpenAPI schema and generated TypeScript types
-infra/postgres                   pgvector schema and indexes
-evals/retrieval                  50-question labelled benchmark
-evals/orchestration_benchmark.py 20/40/90 bounded worker-pool benchmark
-.agents/skills/polytrend-research Project-local analyst skill
-```
-
-## Quality commands
-
-```powershell
+```sh
 npm run typecheck
 npm run build
-.venv\Scripts\python.exe -m pytest services/research/tests
-.venv\Scripts\python.exe evals/retrieval/validate_dataset.py
-.venv\Scripts\python.exe evals/retrieval/evaluate.py
-.venv\Scripts\python.exe evals/orchestration_benchmark.py --tasks 90 --concurrency 8
+uv run --project services/research python -m pytest services/research/tests
+uv run --project services/research python evals/v3/run.py
+uv run --project services/research python scripts/export_contracts.py
+npm run contracts:generate
+# Optional public-network recapture (can take several minutes):
+uv run --project services/research python scripts/capture_showcases.py
 ```
 
-Market prices are signals, not objective truth or financial advice. Every point estimate includes its as-of time, included evidence, range, coverage state, method, freshness, and caveats.
+The benchmark contains labelled synthetic positive and negative controls to test the evaluator.
+It is **not evidence of investment alpha**. Empirical evaluation reports event calibration, asset
+prediction and simulation separately, and remains insufficient until enough independently grouped,
+chronologically available observations and outcome labels exist.
+
+## Review the work
+
+- [API integration guide](docs/POLYMARKET_API.md): identities, units, pagination, coverage and failures.
+- [Architecture](docs/ARCHITECTURE.md): execution, persistence, contracts and deployment.
+- [Methodology](docs/METHODOLOGY.md): alignment, logical structure, uncertainty and leakage controls.
+- [Dataset and provenance](docs/DATASET.md): recordings versus synthetic fixtures and known limits.
+- [User guide](docs/USER_GUIDE.md): live, recorded, replay, scenario and historical operations.
+- [Recorded investigations](showcase/README.md): source-backed findings and capture manifest.
+- [Verification evidence](design-qa.md): test coverage, responsive screenshots and deployment limits.
+
+Initial assets are SPY, QQQ, IEF, TLT and BTC-USD, with Treasury yields and optional vintage macro
+context. Monetary-policy events are the first research cohort; inflation, growth, trade policy
+and geopolitics carry explicit coverage labels. Broad empirical claims require prospective data
+collection and evaluation; historical probability charts cannot recreate historical books or holders.

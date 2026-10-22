@@ -1,6 +1,6 @@
 {
   "name": "@polytrend/contracts",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
@@ -18,7 +18,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "generate": "openapi-typescript openapi/polytrend.openapi.yaml -o src/generated/openapi.ts"
+    "generate": "openapi-typescript openapi/polytrend.openapi.json -o src/generated/openapi.ts"
   },
   "devDependencies": {
     "openapi-typescript": "^7.9.1",

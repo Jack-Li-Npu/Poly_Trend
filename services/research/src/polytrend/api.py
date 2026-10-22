@@ -1,362 +1,598 @@
+"""Poly Trend V3 public research API. Legacy numerical-answer routes are retired."""
+
 from __future__ import annotations
 
 import asyncio
-import json
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
-from typing import Any
-from zoneinfo import ZoneInfo
+from typing import Any, Literal
 
-from fastapi import APIRouter, FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 
-from .config import settings
-from .adaptive_graph import AdaptiveResearchEngine
-from .model_router import ModelRouter
-from .models import (
-    ForkCreate,
-    Investigation,
-    InvestigationCreate,
-    InvestigationPatch,
-    InvestigationMode,
-    RefreshPolicy,
+from .v3.models import (
+    AssetSeries,
+    AttentionSummary,
+    CaseCreate,
+    CaseDetail,
+    CasePatch,
+    EvaluationReport,
+    EventDefinition,
+    EventList,
+    ImportRequest,
+    Observation,
+    ResearchCase,
     ResearchRun,
     RunCreate,
-    RunDiff,
-    RunEvent,
-    RunStatus,
+    RunDetail,
+    SimulationRequest,
+    SimulationResult,
+    utc_now,
 )
-from .providers import PolymarketProvider
-from .research_tools import ResearchTools, ToolError
-from .retrieval import HybridRetriever
-from .seed import seed_markets
-from .store import ArtifactStore, PostgresArtifactStore, create_store
+from .v3.service import ResearchService, import_series
+from .v3.settings import V3Settings
+from .v3.store import ResearchStore
 
 
-def _next_daily_refresh() -> datetime:
-    zone = ZoneInfo("Asia/Shanghai")
-    now = datetime.now(zone)
-    target = now.replace(hour=8, minute=0, second=0, microsecond=0)
-    if target <= now:
-        target += timedelta(days=1)
-    return target.astimezone(timezone.utc)
+def create_app(
+    config: V3Settings | None = None, provider: Any = None, store: ResearchStore | None = None
+) -> FastAPI:
+    config = config or V3Settings()
 
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        from .v3.providers import ResearchDataProvider, load_recorded_bundles
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    store = await create_store(settings.sqlite_path, settings.database_url)
-    provider = PolymarketProvider(settings)
-    checkpointer = None
-    checkpointer_context = None
-    if settings.database_url:
-        try:
-            from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+        app.state.store = store or ResearchStore(config.sqlite_path, config.database_url)
+        await app.state.store.open()
+        app.state.provider = provider or ResearchDataProvider(config)
+        app.state.config = config
+        app.state.service = ResearchService(app.state.store, app.state.provider, config)
+        for bundle in load_recorded_bundles():
+            await app.state.store.put_event(bundle.event)
+        await app.state.service.start()
 
-            connection_url = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
-            checkpointer_context = AsyncPostgresSaver.from_conn_string(connection_url)
-            checkpointer = await checkpointer_context.__aenter__()
-            await checkpointer.setup()
-        except Exception:  # noqa: BLE001 - checkpointing is optional in local fallback mode
-            checkpointer = None
-    app.state.store = store
-    app.state.provider = provider
-    app.state.research_tools = ResearchTools(settings)
-    app.state.model_router = ModelRouter(settings)
-    app.state.engine = AdaptiveResearchEngine(
-        HybridRetriever(provider), app.state.model_router, app.state.research_tools, checkpointer
+        async def scheduler():
+            while True:
+                await asyncio.sleep(30)
+                try:
+                    await app.state.service.start()
+                    await app.state.service.refresh_due()
+                except Exception:
+                    # Provider failures belong to individual runs. Scheduler remains alive.
+                    continue
+
+        app.state.scheduler = asyncio.create_task(scheduler())
+        app.state.collector = None
+        if config.capture_enabled:
+            app.state.collector = asyncio.create_task(capture_watched(app))
+        yield
+        app.state.scheduler.cancel()
+        if app.state.collector:
+            app.state.collector.cancel()
+        await asyncio.gather(
+            app.state.scheduler,
+            *([app.state.collector] if app.state.collector else []),
+            return_exceptions=True,
+        )
+        await app.state.service.close()
+        if hasattr(app.state.provider, "close"):
+            await app.state.provider.close()
+        await app.state.store.close()
+
+    app = FastAPI(
+        title="Poly Trend V3 — Event Expectations & Asset Response Lab",
+        version="3.0.0",
+        lifespan=lifespan,
+        description="Source-linked event research, falsifiable investment theses and reproducible simulation. No real order placement.",
     )
-    app.state.tasks = set()
-    app.state.run_tasks = {}
-    yield
-    for task in app.state.tasks:
-        task.cancel()
-    if app.state.tasks:
-        await asyncio.gather(*app.state.tasks, return_exceptions=True)
-    if checkpointer_context:
-        await checkpointer_context.__aexit__(None, None, None)
-    await store.close()
-
-
-app = FastAPI(
-    title="Poly Trend Research API", version="2.0.0", lifespan=lifespan,
-    description="Verified, resumable prediction-market investigations.",
-)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3100"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-router = APIRouter()
-
-
-def _store(request: Request) -> ArtifactStore | PostgresArtifactStore:
-    return request.app.state.store
-
-
-async def _execute_run(request: Request, run: ResearchRun, included: list[str] | None = None) -> None:
-    store = _store(request)
-
-    async def emit(_: RunEvent) -> None:
-        await store.put_run(run)
-
-    try:
-        await request.app.state.engine.execute(run, emit, included)
-        prior_runs = [item for item in await store.list_runs() if item.investigation_id == run.investigation_id and item.id != run.id and item.status == RunStatus.COMPLETED]
-        if prior_runs:
-            prior = prior_runs[0]
-            current_ids, prior_ids = {m.id for m in run.markets}, {m.id for m in prior.markets}
-            current_p = run.answer.probability if run.answer else None
-            prior_p = prior.answer.probability if prior.answer else None
-            run.diff = RunDiff(
-                prior_run_id=prior.id,
-                probability_change=(current_p - prior_p) if current_p is not None and prior_p is not None else None,
-                added_market_ids=sorted(current_ids - prior_ids), removed_market_ids=sorted(prior_ids - current_ids),
-            )
-        await store.put_run(run)
-    except asyncio.CancelledError:
-        run.status = RunStatus.CANCELLED
-        run.cancelled = True
-        run.updated_at = datetime.now(timezone.utc)
-        await store.put_run(run)
-    except Exception as exc:  # noqa: BLE001 - error is persisted for the run inspector
-        run.status = RunStatus.FAILED
-        run.error = f"{type(exc).__name__}: {exc}"
-        run.updated_at = datetime.now(timezone.utc)
-        await store.put_run(run)
-
-
-def _schedule(request: Request, run: ResearchRun, included: list[str] | None = None) -> None:
-    task = asyncio.create_task(_execute_run(request, run, included))
-    request.app.state.tasks.add(task)
-    request.app.state.run_tasks[run.id] = task
-    task.add_done_callback(request.app.state.tasks.discard)
-    task.add_done_callback(lambda _: request.app.state.run_tasks.pop(run.id, None))
-
-
-@router.post("/investigations", response_model=Investigation, status_code=201)
-async def create_investigation(payload: InvestigationCreate, request: Request) -> Investigation:
-    investigation = Investigation(**payload.model_dump())
-    if payload.deep_mode and payload.mode == InvestigationMode.STANDARD:
-        investigation.mode = InvestigationMode.DEEP
-    if investigation.refresh_policy == RefreshPolicy.DAILY:
-        investigation.next_refresh_at = _next_daily_refresh()
-    await _store(request).put_investigation(investigation)
-    return investigation
-
-
-@router.get("/investigations/{investigation_id}", response_model=Investigation)
-async def get_investigation(investigation_id: str, request: Request) -> Investigation:
-    result = await _store(request).get_investigation(investigation_id)
-    if not result:
-        raise HTTPException(404, "investigation not found")
-    return result
-
-
-@router.patch("/investigations/{investigation_id}", response_model=Investigation)
-async def patch_investigation(investigation_id: str, payload: InvestigationPatch, request: Request) -> Investigation:
-    store = _store(request)
-    result = await store.get_investigation(investigation_id)
-    if not result:
-        raise HTTPException(404, "investigation not found")
-    for key, value in payload.model_dump(exclude_none=True).items():
-        setattr(result, key, value)
-    result.updated_at = datetime.now(timezone.utc)
-    result.next_refresh_at = _next_daily_refresh() if result.refresh_policy == RefreshPolicy.DAILY else None
-    await store.put_investigation(result)
-    return result
-
-
-@router.post("/investigations/{investigation_id}/runs", response_model=ResearchRun, status_code=202)
-async def create_run(investigation_id: str, payload: RunCreate, request: Request) -> ResearchRun:
-    store = _store(request)
-    investigation = await store.get_investigation(investigation_id)
-    if not investigation:
-        raise HTTPException(404, "investigation not found")
-    mode = payload.mode or investigation.mode
-    run = ResearchRun(
-        investigation_id=investigation.id, query=investigation.query,
-        deep_mode=mode == InvestigationMode.DEEP, mode=mode,
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[value.strip() for value in config.cors_origins if value.strip()],
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "PATCH"],
+        allow_headers=["Content-Type", "Last-Event-ID"],
     )
-    investigation.latest_run_id = run.id
-    investigation.run_ids.append(run.id)
-    investigation.updated_at = datetime.now(timezone.utc)
-    await store.put_investigation(investigation)
-    await store.put_run(run)
-    _schedule(request, run, payload.included_market_ids)
-    return run
+    prefix = "/api/v3"
 
+    async def rank_attention(
+        values: list[EventDefinition], request: Request, mode: str
+    ) -> list[EventDefinition]:
+        from .v3.analytics import analyze_bundle
+        from .v3.providers import load_recorded_bundles
 
-@router.get("/runs/{run_id}", response_model=ResearchRun)
-async def get_run(run_id: str, request: Request) -> ResearchRun:
-    result = await _store(request).get_run(run_id)
-    if not result:
-        raise HTTPException(404, "run not found")
-    return result
-
-
-@router.get("/runs/{run_id}/trace")
-async def get_run_trace(run_id: str, request: Request) -> dict[str, Any]:
-    run = await _store(request).get_run(run_id)
-    if not run:
-        raise HTTPException(404, "run not found")
-    return {
-        "plan": run.plan, "workers": run.workers, "tool_observations": run.tool_observations,
-        "agent_messages": run.agent_messages, "decision_records": run.decision_records,
-        "analysis_findings": run.analysis_findings,
-        "traces": run.traces, "quality_report": run.quality_report,
-    }
-
-
-@router.post("/runs/{run_id}/cancel", response_model=ResearchRun)
-async def cancel_run(run_id: str, request: Request) -> ResearchRun:
-    run = await _store(request).get_run(run_id)
-    if not run:
-        raise HTTPException(404, "run not found")
-    task = request.app.state.run_tasks.get(run_id)
-    if task and not task.done():
-        task.cancel()
-    run.cancelled = True
-    run.status = RunStatus.CANCELLED
-    run.updated_at = datetime.now(timezone.utc)
-    await _store(request).put_run(run)
-    return run
-
-
-@router.get("/runs/{run_id}/events")
-async def stream_events(run_id: str, request: Request) -> StreamingResponse:
-    async def generate():
-        cursor = 0
-        idle = 0
-        while idle < 900:
-            run = await _store(request).get_run(run_id)
-            if not run:
-                yield "event: error\ndata: {\"message\":\"run not found\"}\n\n"
-                return
-            while cursor < len(run.events):
-                event = run.events[cursor]
-                cursor += 1
-                yield f"id: {event.sequence}\nevent: stage\ndata: {event.model_dump_json()}\n\n"
-            if run.status in {RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELLED}:
-                yield f"event: complete\ndata: {run.model_dump_json()}\n\n"
-                return
-            idle += 1
-            yield ": keep-alive\n\n"
-            await asyncio.sleep(0.4)
-    return StreamingResponse(generate(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
-
-
-@router.post("/runs/{run_id}/fork", response_model=ResearchRun, status_code=202)
-async def fork_run(run_id: str, payload: ForkCreate, request: Request) -> ResearchRun:
-    original = await _store(request).get_run(run_id)
-    if not original:
-        raise HTTPException(404, "run not found")
-    run = ResearchRun(
-        investigation_id=original.investigation_id, query=original.query,
-        deep_mode=original.deep_mode, mode=original.mode,
-    )
-    await _store(request).put_run(run)
-    _schedule(request, run, payload.included_market_ids)
-    return run
-
-
-@router.get("/markets/{market_id}")
-async def get_market(market_id: str, request: Request):
-    for run in await _store(request).list_runs():
-        for market in run.markets:
-            if market.id == market_id:
-                return market
-    for market in seed_markets():
-        if market.id == market_id:
-            return market
-    raise HTTPException(404, "market not found")
-
-
-@router.get("/assets/{symbol}/snapshot")
-async def get_asset_snapshot(symbol: str, request: Request):
-    try:
-        snapshot, cached, retries = await request.app.state.research_tools.get_asset_snapshot(symbol.upper())
-        return {"snapshot": snapshot, "cached": cached, "retry_count": retries}
-    except ToolError as exc:
-        raise HTTPException(503, str(exc)) from exc
-
-
-@router.get("/providers/health")
-async def provider_health(request: Request) -> dict[str, Any]:
-    return {
-        "polymarket": request.app.state.provider.health(),
-        "storage": await _store(request).health(),
-        "orchestrator": {"status": "ok", "name": "langgraph", "fallback": "deterministic"},
-        "model_router": request.app.state.model_router.health(),
-        "research_tools": request.app.state.research_tools.health(),
-        "models": {"normal": settings.openai_model, "deep": settings.openai_deep_model, "fallback": settings.gemini_model, "keys_required": False},
-    }
-
-
-@app.get("/healthz")
-async def healthz(request: Request) -> dict[str, Any]:
-    return {"status": "ok", "service": "polytrend-research", "storage": await _store(request).health()}
-
-
-@app.post("/mcp")
-async def mcp_adapter(payload: dict[str, Any], request: Request) -> dict[str, Any]:
-    method, params = payload.get("method"), payload.get("params", {})
-    request_id = payload.get("id")
-    if method == "tools/list":
-        result = {"tools": [
-            {"name": "search_markets", "description": "Retrieve and rank prediction markets for a question", "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}},
-            {"name": "get_market", "description": "Get a stored market snapshot", "inputSchema": {"type": "object", "properties": {"id": {"type": "string"}}, "required": ["id"]}},
-            {"name": "run_investigation", "description": "Create and run a verified investigation", "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}},
-            {"name": "get_investigation", "description": "Read a saved investigation", "inputSchema": {"type": "object", "properties": {"id": {"type": "string"}}, "required": ["id"]}},
-            {"name": "get_spot_price", "description": "Get a server-side asset price snapshot", "inputSchema": {"type": "object", "properties": {"symbol": {"type": "string"}}, "required": ["symbol"]}},
-            {"name": "get_price_history", "description": "Get server-side asset price history", "inputSchema": {"type": "object", "properties": {"symbol": {"type": "string"}}, "required": ["symbol"]}},
-            {"name": "get_macro_series", "description": "Get an official FRED macro observation", "inputSchema": {"type": "object", "properties": {"series_id": {"type": "string"}}, "required": ["series_id"]}},
-            {"name": "search_news", "description": "Search recent GDELT news metadata", "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}},
-        ]}
-    elif method == "tools/call":
-        name, arguments = params.get("name"), params.get("arguments", {})
-        if name == "search_markets":
-            _, markets, _ = await request.app.state.engine.retriever.retrieve(arguments["query"])
-            result = {"content": [{"type": "text", "text": json.dumps([market.model_dump(mode="json") for market in markets])}]}
-        elif name == "get_market":
-            market = next((market for run in await _store(request).list_runs() for market in run.markets if market.id == arguments["id"]), None)
-            result = {"content": [{"type": "text", "text": market.model_dump_json() if market else "not found"}]}
-        elif name == "run_investigation":
-            investigation = Investigation(query=arguments["query"])
-            await _store(request).put_investigation(investigation)
-            run = ResearchRun(investigation_id=investigation.id, query=investigation.query)
-            await _store(request).put_run(run)
-            _schedule(request, run)
-            result = {"content": [{"type": "text", "text": run.model_dump_json()}]}
-        elif name == "get_investigation":
-            investigation = await _store(request).get_investigation(arguments["id"])
-            result = {"content": [{"type": "text", "text": investigation.model_dump_json() if investigation else "not found"}]}
-        elif name in {"get_spot_price", "get_price_history"}:
-            snapshot, _, _ = await request.app.state.research_tools.get_asset_snapshot(arguments["symbol"].upper())
-            value = snapshot.model_dump(mode="json") if name == "get_price_history" else {
-                "symbol": snapshot.symbol, "price": snapshot.price, "as_of": snapshot.as_of.isoformat(),
-                "source": snapshot.source,
-            }
-            result = {"content": [{"type": "text", "text": json.dumps(value, default=str)}]}
-        elif name == "get_macro_series":
-            item, _, _ = await request.app.state.research_tools.get_macro_series(arguments["series_id"])
-            result = {"content": [{"type": "text", "text": item.model_dump_json()}]}
-        elif name == "search_news":
-            items, _, _ = await request.app.state.research_tools.search_news(arguments["query"])
-            result = {"content": [{"type": "text", "text": json.dumps([item.model_dump(mode="json") for item in items], default=str)}]}
+        metrics_by_event: dict[str, dict] = {}
+        if mode == "recorded":
+            for bundle in load_recorded_bundles():
+                metrics_by_event[bundle.event.id] = analyze_bundle(bundle)
         else:
-            result = {"isError": True, "content": [{"type": "text", "text": "unknown tool"}]}
-    else:
-        result = {"protocolVersion": "2025-03-26", "capabilities": {"tools": {}}, "serverInfo": {"name": "polytrend", "version": "2.0.0"}}
-    return {"jsonrpc": "2.0", "id": request_id, "result": result}
+            # Use captured research only; discovery prices are not a measured change.
+            cases = {
+                case.id: case
+                for case in await request.app.state.store.list_cases()
+                if case.source_mode == mode
+            }
+            for run in await request.app.state.store.list_runs():
+                case = cases.get(run.case_id)
+                if (
+                    case
+                    and run.status == "completed"
+                    and run.mode == "refresh"
+                    and run.as_of is None
+                    and case.event_id not in metrics_by_event
+                ):
+                    metrics_by_event[case.event_id] = run.metrics
+        for event in values:
+            metrics = metrics_by_event.get(event.id, {})
+            changes = metrics.get("expectation_changes", [])
+            if not changes:
+                continue
+
+            def magnitude(item):
+                return abs(
+                    item.get("delta_7d_pp")
+                    if item.get("delta_7d_pp") is not None
+                    else item.get("delta_1d_pp") or 0
+                )
+
+            change = max(changes, key=magnitude)
+            quality = next(
+                (
+                    item
+                    for item in metrics.get("book_quality", [])
+                    if item.get("market_id") == change["market_id"]
+                ),
+                {},
+            )
+            measured = any(
+                change.get(key) is not None
+                for key in ("delta_1d_pp", "delta_7d_pp", "delta_30d_pp")
+            )
+            event.attention = AttentionSummary(
+                market_id=change["market_id"],
+                question=change.get("question", event.title),
+                probability=change.get("probability"),
+                delta_1d_pp=change.get("delta_1d_pp"),
+                delta_7d_pp=change.get("delta_7d_pp"),
+                delta_30d_pp=change.get("delta_30d_pp"),
+                quote_type=change.get("quote_type", "unavailable"),
+                as_of=change.get("as_of"),
+                spread_pp=quality.get("spread_pp"),
+                bid_depth_usd=quality.get("bid_depth_usd"),
+                ask_depth_usd=quality.get("ask_depth_usd"),
+                history_status=change.get("status", "insufficient"),
+                issues=quality.get("issues", []),
+                score=magnitude(change) if measured else None,
+                **{
+                    key: change.get(key)
+                    for key in (
+                        "comparison_1d_at",
+                        "comparison_7d_at",
+                        "comparison_30d_at",
+                        "window_1d_elapsed_hours",
+                        "window_7d_elapsed_hours",
+                        "window_30d_elapsed_hours",
+                    )
+                },
+            )
+        return sorted(
+            values,
+            key=lambda event: (
+                event.attention is not None and event.attention.score is not None,
+                event.attention.score
+                if event.attention and event.attention.score is not None
+                else 0,
+            ),
+            reverse=True,
+        )
+
+    @app.get("/healthz")
+    async def health(request: Request) -> dict:
+        return {
+            "status": "ok",
+            "version": "3.0.0",
+            "storage": await request.app.state.store.health(),
+        }
+
+    @app.get(f"{prefix}/providers/health")
+    async def providers_health(request: Request) -> dict:
+        return request.app.state.provider.health()
+
+    @app.get(f"{prefix}/events", response_model=EventList)
+    async def events(
+        request: Request,
+        query: str = Query(default="", max_length=200),
+        source_mode: Literal["live", "recorded"] = "live",
+        include_closed: bool = False,
+    ) -> EventList:
+        store = request.app.state.store
+        if source_mode == "recorded":
+            values = await store.list_events("recorded")
+            if query:
+                values = [
+                    event
+                    for event in values
+                    if query.casefold() in (event.title + event.description).casefold()
+                ]
+            return EventList(
+                events=await rank_attention(values, request, source_mode),
+                source_mode="recorded",
+                issues=[
+                    "Recorded source-backed investigations; not live quotes. Ranked by absolute available seven-day change, then one-day change; this measures research attention."
+                ],
+            )
+        if not config.live_market_data:
+            return EventList(
+                events=[],
+                issues=[
+                    "Live market data is disabled. Recorded investigations are a separate, explicit mode."
+                ],
+            )
+        try:
+            values = await request.app.state.provider.discover(
+                query=query, include_closed=include_closed, limit=20
+            )
+            for event in values:
+                await store.put_event(event)
+            return EventList(events=await rank_attention(values, request, source_mode))
+        except Exception:
+            # Do not silently substitute seed data or return credential-bearing HTTP errors.
+            raise HTTPException(
+                503,
+                "Live event discovery is unavailable. Retry or explicitly choose recorded investigations.",
+            ) from None
+
+    @app.get(f"{prefix}/events/{{event_id}}", response_model=EventDefinition)
+    async def event_detail(
+        event_id: str, request: Request, source_mode: Literal["live", "recorded"] = "live"
+    ) -> EventDefinition:
+        value = await request.app.state.store.get_event(event_id, source_mode)
+        if value is None and source_mode == "live" and config.live_market_data:
+            try:
+                value = await request.app.state.provider.get_event(event_id)
+                await request.app.state.store.put_event(value)
+            except Exception:
+                raise HTTPException(404, "event definition unavailable") from None
+        if value is None:
+            raise HTTPException(404, "event not found")
+        return value
+
+    @app.post(f"{prefix}/cases", response_model=ResearchCase, status_code=201)
+    async def create_case(payload: CaseCreate, request: Request) -> ResearchCase:
+        event = await event_detail(payload.event_id, request, payload.source_mode)
+        case = ResearchCase(**payload.model_dump(), title=event.title)
+        await request.app.state.store.put_case(case)
+        return case
+
+    @app.get(f"{prefix}/cases", response_model=list[ResearchCase])
+    async def list_cases(request: Request) -> list[ResearchCase]:
+        return await request.app.state.store.list_cases()
+
+    @app.get(f"{prefix}/cases/{{case_id}}", response_model=CaseDetail)
+    async def case_detail(case_id: str, request: Request) -> CaseDetail:
+        case = await request.app.state.store.get_case(case_id)
+        if not case:
+            raise HTTPException(404, "case not found")
+        event = await event_detail(case.event_id, request, case.source_mode)
+        return CaseDetail(
+            case=case, event=event, runs=await request.app.state.store.list_runs(case_id)
+        )
+
+    @app.patch(f"{prefix}/cases/{{case_id}}", response_model=ResearchCase)
+    async def update_case(case_id: str, payload: CasePatch, request: Request) -> ResearchCase:
+        case = await request.app.state.store.get_case(case_id)
+        if not case:
+            raise HTTPException(404, "case not found")
+        values = payload.model_dump(exclude_none=True)
+        case = ResearchCase.model_validate(
+            {**case.model_dump(), **values, "revision": case.revision + 1, "updated_at": utc_now()}
+        )
+        await request.app.state.store.put_case(case)
+        return case
+
+    @app.get(f"{prefix}/cases/{{case_id}}/revisions")
+    async def revisions(case_id: str, request: Request) -> list[dict]:
+        return await request.app.state.store.revisions(case_id)
+
+    @app.post(f"{prefix}/cases/{{case_id}}/runs", response_model=ResearchRun, status_code=202)
+    async def start_run(case_id: str, payload: RunCreate, request: Request) -> ResearchRun:
+        case = await request.app.state.store.get_case(case_id)
+        if not case:
+            raise HTTPException(404, "case not found")
+        try:
+            return await request.app.state.service.create_run(case, payload)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from None
+
+    @app.get(f"{prefix}/runs/{{run_id}}", response_model=RunDetail)
+    async def run_detail(run_id: str, request: Request) -> RunDetail:
+        run = await request.app.state.store.get_run(run_id)
+        if not run:
+            raise HTTPException(404, "run not found")
+        bundle = await request.app.state.store.get_bundle(run.bundle_id) if run.bundle_id else None
+        from .v3.presentation import availability_view
+
+        presentation = availability_view(bundle, run.as_of) if bundle and run.as_of else None
+        return RunDetail(run=run, bundle=bundle, presentation=presentation)
+
+    @app.get(f"{prefix}/runs/{{run_id}}/events")
+    async def run_events(run_id: str, request: Request) -> StreamingResponse:
+        if not await request.app.state.store.get_run(run_id):
+            raise HTTPException(404, "run not found")
+        try:
+            after = max(0, int(request.headers.get("Last-Event-ID", "0")))
+        except ValueError:
+            raise HTTPException(400, "Last-Event-ID must be an integer") from None
+
+        async def stream():
+            cursor = after
+            while not await request.is_disconnected():
+                run = await request.app.state.store.get_run(run_id)
+                if not run:
+                    return
+                for event in run.progress:
+                    if event.sequence > cursor:
+                        yield f"id: {event.sequence}\nevent: stage\ndata: {event.model_dump_json()}\n\n"
+                        cursor = event.sequence
+                if run.status in {"completed", "failed", "cancelled", "interrupted"}:
+                    result = await run_detail(run_id, request)
+                    yield f"event: complete\ndata: {result.model_dump_json()}\n\n"
+                    return
+                yield ": keep-alive\n\n"
+                await asyncio.sleep(0.3)
+
+        return StreamingResponse(
+            stream(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
+    @app.post(f"{prefix}/runs/{{run_id}}/cancel", response_model=ResearchRun)
+    async def cancel_run(run_id: str, request: Request) -> ResearchRun:
+        try:
+            return await request.app.state.service.cancel(run_id)
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from None
+
+    @app.post(f"{prefix}/runs/{{run_id}}/resume", response_model=ResearchRun, status_code=202)
+    async def resume_run(run_id: str, request: Request) -> ResearchRun:
+        try:
+            return await request.app.state.service.resume(run_id)
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from None
+
+    @app.get(f"{prefix}/runs/{{run_id}}/export")
+    async def export_run(
+        run_id: str, request: Request, format: Literal["json", "markdown"] = "json"
+    ) -> Response:
+        detail = await run_detail(run_id, request)
+        if format == "json":
+            return Response(
+                detail.model_dump_json(indent=2),
+                media_type="application/json",
+                headers={
+                    "Content-Disposition": f'attachment; filename="poly-trend-v3-{run_id}.json"'
+                },
+            )
+        lines = [
+            "# Poly Trend V3 research record",
+            "",
+            f"Run: {run_id}",
+            f"Method: {detail.run.method_version}",
+            f"Snapshot hash: {detail.run.snapshot_hash}",
+            f"Operation: {detail.run.mode}",
+            f"Availability cutoff: {detail.run.as_of.isoformat() if detail.run.as_of else 'capture completion'}",
+            "Source manifest lists the full pinned capture; observations after a historical cutoff are excluded from its displayed findings.",
+            "",
+        ]
+        if detail.bundle:
+            lines += [f"## {detail.bundle.event.title}", "", detail.bundle.event.source_url, ""]
+        for claim in detail.run.claims:
+            lines += [f"### {claim.title} ({claim.kind}; {claim.status})", "", claim.text, ""]
+        lines += [
+            "## Limitations",
+            "",
+            *[f"- {value}" for value in detail.run.limitations],
+            "",
+            "## Sources",
+            "",
+        ]
+        if detail.bundle:
+            lines += [
+                f"- {observation.provider}: {observation.source_url} (hash {observation.content_hash})"
+                for observation in detail.bundle.observations
+            ]
+        return PlainTextResponse(
+            "\n".join(lines),
+            media_type="text/markdown",
+            headers={"Content-Disposition": f'attachment; filename="poly-trend-v3-{run_id}.md"'},
+        )
+
+    @app.post(f"{prefix}/simulations", response_model=SimulationResult)
+    async def simulation(payload: SimulationRequest, request: Request) -> SimulationResult:
+        from .v3.analytics import paper_evaluate, simulate
+
+        try:
+            result = simulate(payload.assumptions)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from None
+        if payload.run_id and payload.symbol and payload.decision_at:
+            detail = await run_detail(payload.run_id, request)
+            series = (
+                next(
+                    (value for value in detail.bundle.assets if value.symbol == payload.symbol),
+                    None,
+                )
+                if detail.bundle
+                else None
+            )
+            if series:
+                result.historical_result = paper_evaluate(
+                    series,
+                    payload.decision_at,
+                    payload.assumptions.holding_sessions,
+                    payload.assumptions.round_trip_cost_bps,
+                    payload.assumptions.capital,
+                )
+            else:
+                result.limitations.append(
+                    "The selected asset has no supplied history in this research snapshot."
+                )
+        return result
+
+    @app.post(f"{prefix}/imports", response_model=AssetSeries, status_code=201)
+    async def import_history(payload: ImportRequest, request: Request) -> AssetSeries:
+        try:
+            series, observation = import_series(payload)
+        except (ValueError, OverflowError) as exc:
+            raise HTTPException(422, str(exc)) from None
+        await request.app.state.store.put_observation(observation)
+        await request.app.state.store.put_import(series)
+        return series
+
+    @app.get(f"{prefix}/observations", response_model=list[Observation])
+    async def observations(request: Request, external_id: str | None = None) -> list[Observation]:
+        return await request.app.state.store.observations(external_id)
+
+    @app.get(f"{prefix}/evaluations", response_model=EvaluationReport)
+    async def evaluations(request: Request) -> EvaluationReport:
+        from .v3.evaluation import get_evaluation_report
+
+        runs = await request.app.state.store.list_runs()
+        bundles = []
+        for key in {run.bundle_id for run in runs if run.bundle_id}:
+            if value := await request.app.state.store.get_bundle(key):
+                bundles.append(value)
+        return get_evaluation_report(runs, bundles)
+
+    @app.api_route(
+        "/api/v1/{legacy_path:path}", methods=["GET", "POST", "PATCH"], include_in_schema=False
+    )
+    @app.api_route(
+        "/v1/{legacy_path:path}", methods=["GET", "POST", "PATCH"], include_in_schema=False
+    )
+    async def legacy_retired(legacy_path: str):
+        raise HTTPException(
+            410, "V2 numerical-answer workflows are retired. Use /api/v3/events and /api/v3/cases."
+        )
+
+    @app.post("/mcp", include_in_schema=False)
+    async def mcp(payload: dict[str, Any], request: Request):
+        method, params, request_id = (
+            payload.get("method"),
+            payload.get("params", {}),
+            payload.get("id"),
+        )
+        if method == "notifications/initialized":
+            return Response(status_code=204)
+        if method == "initialize":
+            result = {
+                "protocolVersion": "2025-03-26",
+                "capabilities": {"tools": {}},
+                "serverInfo": {"name": "polytrend-v3", "version": "3.0.0"},
+            }
+        elif method == "tools/list":
+            result = {
+                "tools": [
+                    {
+                        "name": "search_events",
+                        "description": "Discover live or explicitly recorded economic event definitions.",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "query": {"type": "string"},
+                                "source_mode": {"type": "string", "enum": ["live", "recorded"]},
+                            },
+                        },
+                    },
+                    {
+                        "name": "get_research_run",
+                        "description": "Inspect source-linked research and immutable evidence.",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {"run_id": {"type": "string"}},
+                            "required": ["run_id"],
+                        },
+                    },
+                ]
+            }
+        elif method == "tools/call":
+            args = params.get("arguments", {})
+            try:
+                if params.get("name") == "search_events":
+                    value = await events(
+                        request,
+                        query=str(args.get("query", ""))[:200],
+                        source_mode=args.get("source_mode", "live"),
+                        include_closed=False,
+                    )
+                elif params.get("name") == "get_research_run":
+                    value = await run_detail(str(args["run_id"]), request)
+                else:
+                    return {
+                        "jsonrpc": "2.0",
+                        "id": request_id,
+                        "error": {"code": -32601, "message": "Unknown tool"},
+                    }
+                result = {"content": [{"type": "text", "text": value.model_dump_json()}]}
+            except Exception:
+                result = {
+                    "isError": True,
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Research data unavailable. No result was substituted.",
+                        }
+                    ],
+                }
+        else:
+            return {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "error": {"code": -32601, "message": "Method not found"},
+            }
+        return {"jsonrpc": "2.0", "id": request_id, "result": result}
+
+    return app
 
 
-app.include_router(router, prefix="/api/v1")
-app.include_router(router, prefix="/v1", include_in_schema=False)
+async def capture_watched(app: FastAPI) -> None:
+    """Capture only analyst-watched live contracts; retain gap/reconciliation records."""
+    from .v3.stream import MarketStreamCollector
+
+    while True:
+        try:
+            cases = [
+                case for case in await app.state.store.list_cases() if case.source_mode == "live"
+            ]
+            events = []
+            for case in cases:
+                event = await app.state.store.get_event(case.event_id, "live")
+                if event:
+                    events.append(event)
+            if not events:
+                await asyncio.sleep(30)
+                continue
+            collector = MarketStreamCollector(
+                app.state.provider, app.state.store.put_observation, max_contracts=20
+            )
+            # Reconnect periodically to include newly watched events.
+            try:
+                async with asyncio.timeout(300):
+                    await collector.collect(events)
+            except TimeoutError:
+                continue
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            await asyncio.sleep(5)
+
+
+app = create_app()
 
 
 def serve() -> None:
     import uvicorn
-    uvicorn.run("polytrend.api:app", host=settings.host, port=settings.port, reload=settings.app_env == "development")
+
+    settings = V3Settings()
+    uvicorn.run("polytrend.api:app", host=settings.host, port=settings.port)

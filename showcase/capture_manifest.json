@@ -1,0 +1,412 @@
+{
+  "captured_at": "2026-10-22T00:03:21.258455+00:00",
+  "method": "Public read-only GET capture; no seed fallback.",
+  "temporal_limitations": [
+    "Recorded snapshots are observed at capture time, not at an earlier investment decision.",
+    "Historical charts/candles were retrieved retrospectively and do not certify point-in-time event definitions or historical books.",
+    "Hypothetical simulation assumptions are not historical strategy returns or validated alpha.",
+    "No ETF key is used by default; missing optional prices remain unavailable."
+  ],
+  "cases": [
+    {
+      "file": "01-fed-decision-in-october-20260617190323537.json",
+      "event_id": "606422",
+      "title": "Fed Decision in October?",
+      "source_url": "https://polymarket.com/event/fed-decision-in-october-20260617190323537",
+      "captured_at": "2026-10-22T00:13:43.015805+00:00",
+      "sha256": "77c31cad46431e1196118ef9e46e857f50e5c72fe1ceb4a290fde1ec5376de71",
+      "observations": 45,
+      "markets": 5,
+      "assets": [
+        {
+          "symbol": "SPY",
+          "points": 0,
+          "provider": "Alpha Vantage",
+          "issues": [
+            "ALPHA_VANTAGE_API_KEY is not configured; import attributed ETF prices or configure an optional key."
+          ]
+        },
+        {
+          "symbol": "QQQ",
+          "points": 0,
+          "provider": "Alpha Vantage",
+          "issues": [
+            "ALPHA_VANTAGE_API_KEY is not configured; import attributed ETF prices or configure an optional key."
+          ]
+        },
+        {
+          "symbol": "IEF",
+          "points": 0,
+          "provider": "Alpha Vantage",
+          "issues": [
+            "ALPHA_VANTAGE_API_KEY is not configured; import attributed ETF prices or configure an optional key."
+          ]
+        },
+        {
+          "symbol": "TLT",
+          "points": 0,
+          "provider": "Alpha Vantage",
+          "issues": [
+            "ALPHA_VANTAGE_API_KEY is not configured; import attributed ETF prices or configure an optional key."
+          ]
+        },
+        {
+          "symbol": "BTC-USD",
+          "points": 179,
+          "provider": "Coinbase Exchange",
+          "issues": [
+            "Daily candle closes are available after the UTC interval ends; historical exchange retrieval is reconstructed, not a recorded real-time response."
+          ]
+        },
+        {
+          "symbol": "DGS2",
+          "points": 123,
+          "provider": "U.S. Treasury",
+          "issues": [
+            "Yield levels are not investable fund returns; report changes in basis points.",
+            "Availability conservatively assigned to next UTC day; exact historical release timestamps are not certified."
+          ]
+        },
+        {
+          "symbol": "DGS10",
+          "points": 123,
+          "provider": "U.S. Treasury",
+          "issues": [
+            "Yield levels are not investable fund returns; report changes in basis points.",
+            "Availability conservatively assigned to next UTC day; exact historical release timestamps are not certified."
+          ]
+        }
+      ],
+      "sources": [
+        "https://api.exchange.coinbase.com/products/BTC-USD/candles",
+        "https://clob.polymarket.com/book?token_id=111061902544814266207267295505639408607400625795891618462682726460921782993748",
+        "https://clob.polymarket.com/book?token_id=17010377994663817312158123655937348199252960045746746128731746451645055725586",
+        "https://clob.polymarket.com/book?token_id=18246296022868501258060085368606280205967114341141276439803424448463050819498",
+        "https://clob.polymarket.com/book?token_id=33268510350568915228897273528353467773422190590579607471427765079749830445947",
+        "https://clob.polymarket.com/book?token_id=55159722761418013044126414276680602270318000841690689684819994448621694923050",
+        "https://clob.polymarket.com/fee-rate?token_id=111061902544814266207267295505639408607400625795891618462682726460921782993748",
+        "https://clob.polymarket.com/fee-rate?token_id=17010377994663817312158123655937348199252960045746746128731746451645055725586",
+        "https://clob.polymarket.com/fee-rate?token_id=18246296022868501258060085368606280205967114341141276439803424448463050819498",
+        "https://clob.polymarket.com/fee-rate?token_id=33268510350568915228897273528353467773422190590579607471427765079749830445947",
+        "https://clob.polymarket.com/fee-rate?token_id=55159722761418013044126414276680602270318000841690689684819994448621694923050",
+        "https://data-api.polymarket.com/v2/holders?condition=0x12aa13b3da17ceae1b0a59b5d5b77121e91bb79b4bb0b52bf6543ed3f8d0953b",
+        "https://data-api.polymarket.com/v2/holders?condition=0x9cf563d7b55aa9aa876d5d7e55126347eee473f0ae56d799e325fdef2bf25297",
+        "https://data-api.polymarket.com/v2/holders?condition=0xa69ef420d8b4075ad8ba8611d02c63cb2ece46f5c8c643af223c272689b0c96f",
+        "https://data-api.polymarket.com/v2/holders?condition=0xde5d75ab7702875623ba509bc923241e1211da74a113521b3b70ddac930d7316",
+        "https://data-api.polymarket.com/v2/holders?condition=0xdf9bf27ee5757c55b44b8b9826ddc9ec3a8809aa3278634c45edbb7fc8f1a3e3",
+        "https://data-api.polymarket.com/v2/oi?condition=0x12aa13b3da17ceae1b0a59b5d5b77121e91bb79b4bb0b52bf6543ed3f8d0953b",
+        "https://data-api.polymarket.com/v2/oi?condition=0x9cf563d7b55aa9aa876d5d7e55126347eee473f0ae56d799e325fdef2bf25297",
+        "https://data-api.polymarket.com/v2/oi?condition=0xa69ef420d8b4075ad8ba8611d02c63cb2ece46f5c8c643af223c272689b0c96f",
+        "https://data-api.polymarket.com/v2/oi?condition=0xde5d75ab7702875623ba509bc923241e1211da74a113521b3b70ddac930d7316",
+        "https://data-api.polymarket.com/v2/oi?condition=0xdf9bf27ee5757c55b44b8b9826ddc9ec3a8809aa3278634c45edbb7fc8f1a3e3",
+        "https://data-api.polymarket.com/v2/positions?condition=0x12aa13b3da17ceae1b0a59b5d5b77121e91bb79b4bb0b52bf6543ed3f8d0953b",
+        "https://data-api.polymarket.com/v2/positions?condition=0x9cf563d7b55aa9aa876d5d7e55126347eee473f0ae56d799e325fdef2bf25297",
+        "https://data-api.polymarket.com/v2/positions?condition=0xa69ef420d8b4075ad8ba8611d02c63cb2ece46f5c8c643af223c272689b0c96f",
+        "https://data-api.polymarket.com/v2/positions?condition=0xde5d75ab7702875623ba509bc923241e1211da74a113521b3b70ddac930d7316",
+        "https://data-api.polymarket.com/v2/positions?condition=0xdf9bf27ee5757c55b44b8b9826ddc9ec3a8809aa3278634c45edbb7fc8f1a3e3",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=111061902544814266207267295505639408607400625795891618462682726460921782993748&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=17010377994663817312158123655937348199252960045746746128731746451645055725586&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=18246296022868501258060085368606280205967114341141276439803424448463050819498&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=33268510350568915228897273528353467773422190590579607471427765079749830445947&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=55159722761418013044126414276680602270318000841690689684819994448621694923050&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0x12aa13b3da17ceae1b0a59b5d5b77121e91bb79b4bb0b52bf6543ed3f8d0953b",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0x9cf563d7b55aa9aa876d5d7e55126347eee473f0ae56d799e325fdef2bf25297",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0xa69ef420d8b4075ad8ba8611d02c63cb2ece46f5c8c643af223c272689b0c96f",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0xde5d75ab7702875623ba509bc923241e1211da74a113521b3b70ddac930d7316",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0xdf9bf27ee5757c55b44b8b9826ddc9ec3a8809aa3278634c45edbb7fc8f1a3e3",
+        "https://data-api.polymarket.com/v2/status",
+        "https://data-api.polymarket.com/v2/trades?condition=0x12aa13b3da17ceae1b0a59b5d5b77121e91bb79b4bb0b52bf6543ed3f8d0953b",
+        "https://data-api.polymarket.com/v2/trades?condition=0x9cf563d7b55aa9aa876d5d7e55126347eee473f0ae56d799e325fdef2bf25297",
+        "https://data-api.polymarket.com/v2/trades?condition=0xa69ef420d8b4075ad8ba8611d02c63cb2ece46f5c8c643af223c272689b0c96f",
+        "https://data-api.polymarket.com/v2/trades?condition=0xde5d75ab7702875623ba509bc923241e1211da74a113521b3b70ddac930d7316",
+        "https://data-api.polymarket.com/v2/trades?condition=0xdf9bf27ee5757c55b44b8b9826ddc9ec3a8809aa3278634c45edbb7fc8f1a3e3",
+        "https://gamma-api.polymarket.com/events/606422",
+        "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2026"
+      ],
+      "issues": [
+        "Exact duplicate composite rows are collapsed when no stable fill ID is supplied; identical distinct fills cannot always be distinguished.",
+        "History was augmented after the initial book snapshot; source receipt times preserve the different capture times. No historical book was reconstructed.",
+        "Initial long-window history request was rejected; this genuine coarse history was fetched later using interval=max.",
+        "Observed trade sample spans 2026-10-18T14:11:09+00:00 to 2026-10-21T23:49:05+00:00; not a fixed 24-hour flow window.",
+        "Observed trade sample spans 2026-10-20T20:21:02+00:00 to 2026-10-21T22:54:29+00:00; not a fixed 24-hour flow window.",
+        "Observed trade sample spans 2026-10-20T23:54:05+00:00 to 2026-10-21T21:16:54+00:00; not a fixed 24-hour flow window.",
+        "Observed trade sample spans 2026-10-21T14:42:24+00:00 to 2026-10-21T23:30:33+00:00; not a fixed 24-hour flow window.",
+        "Observed trade sample spans 2026-10-21T16:51:11+00:00 to 2026-10-21T23:55:53+00:00; not a fixed 24-hour flow window.",
+        "Participants count is observed wallets in a bounded recent-trades page, not all traders or unique people.",
+        "Public observations are captured now; historical reconstructions do not certify that the event definition or book was available at an earlier decision time.",
+        "Taker pressure is outcome-aware within a bounded recent-trades sample, not net capital inflow or predictive alpha.",
+        "Two-sided non-crossed book unavailable; Gamma indication may be stale.",
+        "holders page budget reached; coverage is incomplete.",
+        "positions page budget reached; coverage is incomplete.",
+        "trades page budget reached; coverage is incomplete."
+      ]
+    },
+    {
+      "file": "02-core-cpi-yoy-october-2026.json",
+      "event_id": "1189689",
+      "title": "Core CPI YoY - October 2026",
+      "source_url": "https://polymarket.com/event/core-cpi-yoy-october-2026",
+      "captured_at": "2026-10-22T00:13:43.064139+00:00",
+      "sha256": "ed6eaae378e7667e7df94f34f4f923f75813e401a99828f623680cb074d299a1",
+      "observations": 85,
+      "markets": 10,
+      "assets": [
+        {
+          "symbol": "SPY",
+          "points": 0,
+          "provider": "Alpha Vantage",
+          "issues": [
+            "ALPHA_VANTAGE_API_KEY is not configured; import attributed ETF prices or configure an optional key."
+          ]
+        },
+        {
+          "symbol": "QQQ",
+          "points": 0,
+          "provider": "Alpha Vantage",
+          "issues": [
+            "ALPHA_VANTAGE_API_KEY is not configured; import attributed ETF prices or configure an optional key."
+          ]
+        },
+        {
+          "symbol": "IEF",
+          "points": 0,
+          "provider": "Alpha Vantage",
+          "issues": [
+            "ALPHA_VANTAGE_API_KEY is not configured; import attributed ETF prices or configure an optional key."
+          ]
+        },
+        {
+          "symbol": "TLT",
+          "points": 0,
+          "provider": "Alpha Vantage",
+          "issues": [
+            "ALPHA_VANTAGE_API_KEY is not configured; import attributed ETF prices or configure an optional key."
+          ]
+        },
+        {
+          "symbol": "BTC-USD",
+          "points": 179,
+          "provider": "Coinbase Exchange",
+          "issues": [
+            "Daily candle closes are available after the UTC interval ends; historical exchange retrieval is reconstructed, not a recorded real-time response."
+          ]
+        },
+        {
+          "symbol": "DGS2",
+          "points": 123,
+          "provider": "U.S. Treasury",
+          "issues": [
+            "Yield levels are not investable fund returns; report changes in basis points.",
+            "Availability conservatively assigned to next UTC day; exact historical release timestamps are not certified."
+          ]
+        },
+        {
+          "symbol": "DGS10",
+          "points": 123,
+          "provider": "U.S. Treasury",
+          "issues": [
+            "Yield levels are not investable fund returns; report changes in basis points.",
+            "Availability conservatively assigned to next UTC day; exact historical release timestamps are not certified."
+          ]
+        }
+      ],
+      "sources": [
+        "https://api.exchange.coinbase.com/products/BTC-USD/candles",
+        "https://clob.polymarket.com/book?token_id=1736421492556505703192733913364322885739189504295226011633538241008223298019",
+        "https://clob.polymarket.com/book?token_id=28939129980875527925314532712610022842919584039857564764352847375560627168962",
+        "https://clob.polymarket.com/book?token_id=32995455259780366733772963431589087212031870108303304622262823996966494412376",
+        "https://clob.polymarket.com/book?token_id=45074725639926662431996329212195586201554063578654154667969032244312026096419",
+        "https://clob.polymarket.com/book?token_id=76148487777117830393096522461292777602715069141323457871564630041094841587741",
+        "https://clob.polymarket.com/book?token_id=80356405133193542079877998897224501942854893657690274770560815710068857324623",
+        "https://clob.polymarket.com/book?token_id=93078512961796287247363542120412828658972251457062122637715111423693497865204",
+        "https://clob.polymarket.com/book?token_id=98003224529922321216041983535354144908046359737565046526585056733175306576858",
+        "https://clob.polymarket.com/book?token_id=98249368441611147841272756588288128095917076860162383814767428549768883030864",
+        "https://clob.polymarket.com/book?token_id=9873910259704424307458162939844325223161200217249020796015555258386412710572",
+        "https://clob.polymarket.com/fee-rate?token_id=1736421492556505703192733913364322885739189504295226011633538241008223298019",
+        "https://clob.polymarket.com/fee-rate?token_id=28939129980875527925314532712610022842919584039857564764352847375560627168962",
+        "https://clob.polymarket.com/fee-rate?token_id=32995455259780366733772963431589087212031870108303304622262823996966494412376",
+        "https://clob.polymarket.com/fee-rate?token_id=45074725639926662431996329212195586201554063578654154667969032244312026096419",
+        "https://clob.polymarket.com/fee-rate?token_id=76148487777117830393096522461292777602715069141323457871564630041094841587741",
+        "https://clob.polymarket.com/fee-rate?token_id=80356405133193542079877998897224501942854893657690274770560815710068857324623",
+        "https://clob.polymarket.com/fee-rate?token_id=93078512961796287247363542120412828658972251457062122637715111423693497865204",
+        "https://clob.polymarket.com/fee-rate?token_id=98003224529922321216041983535354144908046359737565046526585056733175306576858",
+        "https://clob.polymarket.com/fee-rate?token_id=98249368441611147841272756588288128095917076860162383814767428549768883030864",
+        "https://clob.polymarket.com/fee-rate?token_id=9873910259704424307458162939844325223161200217249020796015555258386412710572",
+        "https://data-api.polymarket.com/v2/holders?condition=0x078fc03e703b22c66a24949a1014263a58b8e9f1af1b009654ffd1f71909605f",
+        "https://data-api.polymarket.com/v2/holders?condition=0x3a87b7997afc748c415544e45c28e75e035f71fbbd89fdf5ab210869bb81cba5",
+        "https://data-api.polymarket.com/v2/holders?condition=0x79ffa6b805ed409d7c67ae39e538aa6b3d83fb7140916384c4f7435128e02719",
+        "https://data-api.polymarket.com/v2/holders?condition=0x91ac307877536b0a3b8880a9b672337db55b2a065ed38977059dc8c59c82769b",
+        "https://data-api.polymarket.com/v2/holders?condition=0xcea0374b1560a26e2e37833e234793f456845c1368891047bf9db07e44b13852",
+        "https://data-api.polymarket.com/v2/holders?condition=0xd2e8256b8a2aa9b18c0bbb7261845695febf9bad1823b945215c0c4b16889a6a",
+        "https://data-api.polymarket.com/v2/holders?condition=0xd77b4a09456d44a202d75519344adb4a134d313bc8394c167c023bbca0e66059",
+        "https://data-api.polymarket.com/v2/holders?condition=0xd8ede4089771c6929a0476d1de4767ec56e186b6608933f3300cc3182089aa56",
+        "https://data-api.polymarket.com/v2/holders?condition=0xe8e06f4aba9be07fb3fbf4f156640643ede369b8e0964aaa0f3d6426dc6c8a93",
+        "https://data-api.polymarket.com/v2/holders?condition=0xfdeb406c5c04689c62f18d94cb56873d7ecf8014cba33ddb9f29f5f6382a8502",
+        "https://data-api.polymarket.com/v2/oi?condition=0x078fc03e703b22c66a24949a1014263a58b8e9f1af1b009654ffd1f71909605f",
+        "https://data-api.polymarket.com/v2/oi?condition=0x3a87b7997afc748c415544e45c28e75e035f71fbbd89fdf5ab210869bb81cba5",
+        "https://data-api.polymarket.com/v2/oi?condition=0x79ffa6b805ed409d7c67ae39e538aa6b3d83fb7140916384c4f7435128e02719",
+        "https://data-api.polymarket.com/v2/oi?condition=0x91ac307877536b0a3b8880a9b672337db55b2a065ed38977059dc8c59c82769b",
+        "https://data-api.polymarket.com/v2/oi?condition=0xcea0374b1560a26e2e37833e234793f456845c1368891047bf9db07e44b13852",
+        "https://data-api.polymarket.com/v2/oi?condition=0xd2e8256b8a2aa9b18c0bbb7261845695febf9bad1823b945215c0c4b16889a6a",
+        "https://data-api.polymarket.com/v2/oi?condition=0xd77b4a09456d44a202d75519344adb4a134d313bc8394c167c023bbca0e66059",
+        "https://data-api.polymarket.com/v2/oi?condition=0xd8ede4089771c6929a0476d1de4767ec56e186b6608933f3300cc3182089aa56",
+        "https://data-api.polymarket.com/v2/oi?condition=0xe8e06f4aba9be07fb3fbf4f156640643ede369b8e0964aaa0f3d6426dc6c8a93",
+        "https://data-api.polymarket.com/v2/oi?condition=0xfdeb406c5c04689c62f18d94cb56873d7ecf8014cba33ddb9f29f5f6382a8502",
+        "https://data-api.polymarket.com/v2/positions?condition=0x078fc03e703b22c66a24949a1014263a58b8e9f1af1b009654ffd1f71909605f",
+        "https://data-api.polymarket.com/v2/positions?condition=0x3a87b7997afc748c415544e45c28e75e035f71fbbd89fdf5ab210869bb81cba5",
+        "https://data-api.polymarket.com/v2/positions?condition=0x79ffa6b805ed409d7c67ae39e538aa6b3d83fb7140916384c4f7435128e02719",
+        "https://data-api.polymarket.com/v2/positions?condition=0x91ac307877536b0a3b8880a9b672337db55b2a065ed38977059dc8c59c82769b",
+        "https://data-api.polymarket.com/v2/positions?condition=0xcea0374b1560a26e2e37833e234793f456845c1368891047bf9db07e44b13852",
+        "https://data-api.polymarket.com/v2/positions?condition=0xd2e8256b8a2aa9b18c0bbb7261845695febf9bad1823b945215c0c4b16889a6a",
+        "https://data-api.polymarket.com/v2/positions?condition=0xd77b4a09456d44a202d75519344adb4a134d313bc8394c167c023bbca0e66059",
+        "https://data-api.polymarket.com/v2/positions?condition=0xd8ede4089771c6929a0476d1de4767ec56e186b6608933f3300cc3182089aa56",
+        "https://data-api.polymarket.com/v2/positions?condition=0xe8e06f4aba9be07fb3fbf4f156640643ede369b8e0964aaa0f3d6426dc6c8a93",
+        "https://data-api.polymarket.com/v2/positions?condition=0xfdeb406c5c04689c62f18d94cb56873d7ecf8014cba33ddb9f29f5f6382a8502",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=1736421492556505703192733913364322885739189504295226011633538241008223298019&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=28939129980875527925314532712610022842919584039857564764352847375560627168962&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=32995455259780366733772963431589087212031870108303304622262823996966494412376&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=45074725639926662431996329212195586201554063578654154667969032244312026096419&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=76148487777117830393096522461292777602715069141323457871564630041094841587741&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=80356405133193542079877998897224501942854893657690274770560815710068857324623&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=93078512961796287247363542120412828658972251457062122637715111423693497865204&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=98003224529922321216041983535354144908046359737565046526585056733175306576858&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=98249368441611147841272756588288128095917076860162383814767428549768883030864&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=9873910259704424307458162939844325223161200217249020796015555258386412710572&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0x078fc03e703b22c66a24949a1014263a58b8e9f1af1b009654ffd1f71909605f",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0x3a87b7997afc748c415544e45c28e75e035f71fbbd89fdf5ab210869bb81cba5",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0x79ffa6b805ed409d7c67ae39e538aa6b3d83fb7140916384c4f7435128e02719",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0x91ac307877536b0a3b8880a9b672337db55b2a065ed38977059dc8c59c82769b",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0xcea0374b1560a26e2e37833e234793f456845c1368891047bf9db07e44b13852",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0xd2e8256b8a2aa9b18c0bbb7261845695febf9bad1823b945215c0c4b16889a6a",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0xd77b4a09456d44a202d75519344adb4a134d313bc8394c167c023bbca0e66059",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0xd8ede4089771c6929a0476d1de4767ec56e186b6608933f3300cc3182089aa56",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0xe8e06f4aba9be07fb3fbf4f156640643ede369b8e0964aaa0f3d6426dc6c8a93",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0xfdeb406c5c04689c62f18d94cb56873d7ecf8014cba33ddb9f29f5f6382a8502",
+        "https://data-api.polymarket.com/v2/status",
+        "https://data-api.polymarket.com/v2/trades?condition=0x078fc03e703b22c66a24949a1014263a58b8e9f1af1b009654ffd1f71909605f",
+        "https://data-api.polymarket.com/v2/trades?condition=0x3a87b7997afc748c415544e45c28e75e035f71fbbd89fdf5ab210869bb81cba5",
+        "https://data-api.polymarket.com/v2/trades?condition=0x79ffa6b805ed409d7c67ae39e538aa6b3d83fb7140916384c4f7435128e02719",
+        "https://data-api.polymarket.com/v2/trades?condition=0x91ac307877536b0a3b8880a9b672337db55b2a065ed38977059dc8c59c82769b",
+        "https://data-api.polymarket.com/v2/trades?condition=0xcea0374b1560a26e2e37833e234793f456845c1368891047bf9db07e44b13852",
+        "https://data-api.polymarket.com/v2/trades?condition=0xd2e8256b8a2aa9b18c0bbb7261845695febf9bad1823b945215c0c4b16889a6a",
+        "https://data-api.polymarket.com/v2/trades?condition=0xd77b4a09456d44a202d75519344adb4a134d313bc8394c167c023bbca0e66059",
+        "https://data-api.polymarket.com/v2/trades?condition=0xd8ede4089771c6929a0476d1de4767ec56e186b6608933f3300cc3182089aa56",
+        "https://data-api.polymarket.com/v2/trades?condition=0xe8e06f4aba9be07fb3fbf4f156640643ede369b8e0964aaa0f3d6426dc6c8a93",
+        "https://data-api.polymarket.com/v2/trades?condition=0xfdeb406c5c04689c62f18d94cb56873d7ecf8014cba33ddb9f29f5f6382a8502",
+        "https://gamma-api.polymarket.com/events/1189689",
+        "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2026"
+      ],
+      "issues": [
+        "Exact duplicate composite rows are collapsed when no stable fill ID is supplied; identical distinct fills cannot always be distinguished.",
+        "History was augmented after the initial book snapshot; source receipt times preserve the different capture times. No historical book was reconstructed.",
+        "Initial long-window history request was rejected; this genuine coarse history was fetched later using interval=max.",
+        "Observed trade sample spans 2026-10-14T21:33:36+00:00 to 2026-10-20T16:34:09+00:00; not a fixed 24-hour flow window.",
+        "Observed trade sample spans 2026-10-14T21:33:36+00:00 to 2026-10-21T13:01:33+00:00; not a fixed 24-hour flow window.",
+        "Observed trade sample spans 2026-10-14T21:33:37+00:00 to 2026-10-20T16:34:09+00:00; not a fixed 24-hour flow window.",
+        "Observed trade sample spans 2026-10-14T21:33:37+00:00 to 2026-10-20T18:41:44+00:00; not a fixed 24-hour flow window.",
+        "Observed trade sample spans 2026-10-14T21:33:37+00:00 to 2026-10-21T10:01:57+00:00; not a fixed 24-hour flow window.",
+        "Participants count is observed wallets in a bounded recent-trades page, not all traders or unique people.",
+        "Public observations are captured now; historical reconstructions do not certify that the event definition or book was available at an earlier decision time.",
+        "Taker pressure is outcome-aware within a bounded recent-trades sample, not net capital inflow or predictive alpha."
+      ]
+    },
+    {
+      "file": "03-us-recession-by-end-of-2026.json",
+      "event_id": "48802",
+      "title": "US recession by end of 2026?",
+      "source_url": "https://polymarket.com/event/us-recession-by-end-of-2026",
+      "captured_at": "2026-10-22T00:13:43.097451+00:00",
+      "sha256": "d9c639d3c5221a4567bd9ab3d3044dd9abb3e9bde2aa2d52d666d70c07821669",
+      "observations": 13,
+      "markets": 1,
+      "assets": [
+        {
+          "symbol": "SPY",
+          "points": 0,
+          "provider": "Alpha Vantage",
+          "issues": [
+            "ALPHA_VANTAGE_API_KEY is not configured; import attributed ETF prices or configure an optional key."
+          ]
+        },
+        {
+          "symbol": "QQQ",
+          "points": 0,
+          "provider": "Alpha Vantage",
+          "issues": [
+            "ALPHA_VANTAGE_API_KEY is not configured; import attributed ETF prices or configure an optional key."
+          ]
+        },
+        {
+          "symbol": "IEF",
+          "points": 0,
+          "provider": "Alpha Vantage",
+          "issues": [
+            "ALPHA_VANTAGE_API_KEY is not configured; import attributed ETF prices or configure an optional key."
+          ]
+        },
+        {
+          "symbol": "TLT",
+          "points": 0,
+          "provider": "Alpha Vantage",
+          "issues": [
+            "ALPHA_VANTAGE_API_KEY is not configured; import attributed ETF prices or configure an optional key."
+          ]
+        },
+        {
+          "symbol": "BTC-USD",
+          "points": 179,
+          "provider": "Coinbase Exchange",
+          "issues": [
+            "Daily candle closes are available after the UTC interval ends; historical exchange retrieval is reconstructed, not a recorded real-time response."
+          ]
+        },
+        {
+          "symbol": "DGS2",
+          "points": 123,
+          "provider": "U.S. Treasury",
+          "issues": [
+            "Yield levels are not investable fund returns; report changes in basis points.",
+            "Availability conservatively assigned to next UTC day; exact historical release timestamps are not certified."
+          ]
+        },
+        {
+          "symbol": "DGS10",
+          "points": 123,
+          "provider": "U.S. Treasury",
+          "issues": [
+            "Yield levels are not investable fund returns; report changes in basis points.",
+            "Availability conservatively assigned to next UTC day; exact historical release timestamps are not certified."
+          ]
+        }
+      ],
+      "sources": [
+        "https://api.exchange.coinbase.com/products/BTC-USD/candles",
+        "https://clob.polymarket.com/book?token_id=100379208559626151022751801118534484742123694725746262280150222742563282755057",
+        "https://clob.polymarket.com/fee-rate?token_id=100379208559626151022751801118534484742123694725746262280150222742563282755057",
+        "https://data-api.polymarket.com/v2/holders?condition=0xfdc73f10edf0266756686f35b5712cffa828b0940fc015e0426c76c934c2105d",
+        "https://data-api.polymarket.com/v2/oi?condition=0xfdc73f10edf0266756686f35b5712cffa828b0940fc015e0426c76c934c2105d",
+        "https://data-api.polymarket.com/v2/positions?condition=0xfdc73f10edf0266756686f35b5712cffa828b0940fc015e0426c76c934c2105d",
+        "https://data-api.polymarket.com/v2/prices-history?token_id=100379208559626151022751801118534484742123694725746262280150222742563282755057&interval=max&bucket_seconds=43200",
+        "https://data-api.polymarket.com/v2/resolutions?condition=0xfdc73f10edf0266756686f35b5712cffa828b0940fc015e0426c76c934c2105d",
+        "https://data-api.polymarket.com/v2/status",
+        "https://data-api.polymarket.com/v2/trades?condition=0xfdc73f10edf0266756686f35b5712cffa828b0940fc015e0426c76c934c2105d",
+        "https://gamma-api.polymarket.com/events/48802",
+        "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2026"
+      ],
+      "issues": [
+        "Exact duplicate composite rows are collapsed when no stable fill ID is supplied; identical distinct fills cannot always be distinguished.",
+        "History was augmented after the initial book snapshot; source receipt times preserve the different capture times. No historical book was reconstructed.",
+        "Initial long-window history request was rejected; this genuine coarse history was fetched later using interval=max.",
+        "Observed trade sample spans 2026-10-08T00:23:32+00:00 to 2026-10-21T23:55:02+00:00; not a fixed 24-hour flow window.",
+        "Participants count is observed wallets in a bounded recent-trades page, not all traders or unique people.",
+        "Public observations are captured now; historical reconstructions do not certify that the event definition or book was available at an earlier decision time.",
+        "Taker pressure is outcome-aware within a bounded recent-trades sample, not net capital inflow or predictive alpha.",
+        "holders page budget reached; coverage is incomplete.",
+        "positions page budget reached; coverage is incomplete.",
+        "trades page budget reached; coverage is incomplete."
+      ]
+    }
+  ],
+  "failures": [],
+  "augmented_at": "2026-10-22T00:18:06.517244+00:00"
+}

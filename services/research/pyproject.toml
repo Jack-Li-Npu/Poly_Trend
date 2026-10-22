@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "polytrend-research"
-version = "0.2.0"
-description = "Stateful market-intelligence research service for Poly Trend V2"
+version = "3.0.0"
+description = "Event expectations and asset response research service for Poly Trend V3"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
@@ -15,13 +15,13 @@ dependencies = [
   "langgraph>=1.2,<2",
   "pydantic>=2.13,<3",
   "uvicorn[standard]>=0.52,<1",
+  "websockets>=15,<17",
 ]
 
 [project.optional-dependencies]
-postgres = ["psycopg[binary,pool]>=3.3,<4", "langgraph-checkpoint-postgres>=3,<4"]
-redis = ["redis>=7.1,<8"]
+postgres = ["psycopg[binary,pool]>=3.3,<4"]
 test = ["pytest>=8.4,<9", "pytest-asyncio>=1.2,<2"]
-dev = ["polytrend-research[postgres,redis,test]", "ruff>=0.14,<1"]
+dev = ["polytrend-research[postgres,test]", "ruff>=0.14,<1"]
 
 [project.scripts]
 polytrend-research = "polytrend.api:serve"
@@ -42,3 +42,5 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+# Ruff formats code; SQL statements and source-linked prose may retain longer literals.
+ignore = ["E501"]

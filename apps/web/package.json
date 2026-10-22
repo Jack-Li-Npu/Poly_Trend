@@ -1,6 +1,6 @@
 {
   "name": "@polytrend/web",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 0.0.0.0",
@@ -8,14 +8,15 @@
     "start": "next start --hostname 0.0.0.0",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
-    "test": "tsc --noEmit"
+    "test": "tsc --noEmit && node --experimental-strip-types --test lib/*.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
     "@tabler/icons-react": "^3.36.1",
-    "next": "16.2.11",
+    "next": "16.4.2",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "@polytrend/contracts": "3.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
