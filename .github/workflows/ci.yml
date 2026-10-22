@@ -33,3 +33,20 @@ jobs:
       - run: npm run build
       - run: uv run --project services/research python -m pytest services/research/tests
       - run: uv run --project services/research python evals/v3/run.py
+  containers:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      POSTGRES_PASSWORD: polytrend_ci_ephemeral
+      POLYTREND_LIVE_MARKET_DATA: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose up --build -d --wait --wait-timeout 120
+      - run: python3 scripts/container_smoke.py
+      - run: docker compose restart api
+      - run: python3 scripts/container_smoke.py --verify-recovery
+      - if: failure()
+        run: docker compose logs --tail=100
+      - if: always()
+        run: docker compose down -v
