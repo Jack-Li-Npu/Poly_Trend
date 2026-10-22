@@ -1196,7 +1196,7 @@ class ResearchDataProvider:
 def load_recorded_bundles(directory: Path | None = None) -> list[EvidenceBundle]:
     candidates = [
         Path(os.getenv("POLYTREND_SHOWCASE_DIR", "showcase")),
-        Path(__file__).resolve().parents[5] / "showcase",
+        *(parent / "showcase" for parent in Path(__file__).resolve().parents),
     ]
     root = directory or next(
         (candidate for candidate in candidates if candidate.is_dir()), candidates[0]

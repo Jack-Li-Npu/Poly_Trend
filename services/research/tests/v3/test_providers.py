@@ -428,3 +428,14 @@ async def test_optional_etf_cache_and_daily_budget_are_real():
     missing, _ = await provider.asset_series("QQQ", cutoff)
     assert first.points and again.points and len(requests) == 1
     assert not missing.points and any("budget reached" in issue for issue in missing.issues)
+
+
+def test_recordings_load_from_explicit_directory_in_shallow_container_layout(monkeypatch):
+    from pathlib import Path
+
+    from polytrend.v3 import providers
+
+    recording_dir = Path(__file__).resolve().parents[4] / "showcase"
+    monkeypatch.setenv("POLYTREND_SHOWCASE_DIR", str(recording_dir))
+    monkeypatch.setattr(providers, "__file__", "/app/src/polytrend/v3/providers.py")
+    assert len(providers.load_recorded_bundles()) == 3

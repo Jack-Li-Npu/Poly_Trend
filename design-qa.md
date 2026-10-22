@@ -4,7 +4,7 @@
 
 ## Automated evidence
 
-- Python integration/regression suite: 59 passing tests under the frozen Python dependency lock.
+- Python integration/regression suite: 60 passing tests under the frozen Python dependency lock.
 - Seven frontend regressions plus strict TypeScript: passing.
 - Production Next.js 16.4.2 build using Turbopack: passing in the managed worktree.
 - npm dependency audit: zero reported vulnerabilities after patched dependencies.
