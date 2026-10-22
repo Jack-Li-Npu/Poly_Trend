@@ -1,5 +1,4 @@
-import { ProbabilityWorkspace } from "@/components/ProbabilityWorkspace";
-
+import { Workbench } from "@/components/v3/Workbench";
 export default function HomePage() {
-  return <ProbabilityWorkspace />;
+  return <Workbench />;
 }

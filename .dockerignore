@@ -15,3 +15,8 @@ coverage
 *.log
 search-results
 polymarket_python.ipynb
+
+# Keep local research state and environment secrets out of image build contexts.
+data
+.env*
+**/.env*

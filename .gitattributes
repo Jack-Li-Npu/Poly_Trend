@@ -1,0 +1,4 @@
+# Captured provider payloads and generated contracts remain inspectable, collapsed by default in reviews.
+showcase/*.json linguist-generated=true
+packages/contracts/src/generated/* linguist-generated=true
+packages/contracts/dist/** linguist-generated=true

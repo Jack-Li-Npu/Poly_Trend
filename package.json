@@ -1,8 +1,8 @@
 {
-  "name": "poly-trend-v2",
-  "version": "2.0.0",
+  "name": "poly-trend-v3",
+  "version": "3.0.0",
   "private": true,
-  "description": "Prediction-market intelligence terminal with a durable agent research runtime.",
+  "description": "Event expectations, cross-asset response research and reproducible simulation.",
   "engines": {
     "node": ">=22 <23"
   },
@@ -18,11 +18,11 @@
     "test": "npm run test --workspace @polytrend/web",
     "contracts:generate": "npm run generate --workspace @polytrend/contracts",
     "contracts:check": "npm run typecheck --workspace @polytrend/contracts",
-    "eval:validate": "python evals/retrieval/validate_dataset.py",
-    "eval:retrieval": "python evals/retrieval/evaluate.py",
-    "eval:orchestration": "python evals/orchestration_benchmark.py --tasks 90 --concurrency 8",
-    "stack:up": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1",
-    "stack:health": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/health.ps1",
-    "stack:down": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/stop.ps1"
+    "contracts:export": "python scripts/export_contracts.py",
+    "test:research": "python -m pytest services/research/tests/v3",
+    "eval:v3": "python evals/v3/run.py",
+    "capture:showcases": "python scripts/capture_showcases.py",
+    "stack:up": "docker compose up --build -d",
+    "stack:down": "docker compose down"
   }
 }

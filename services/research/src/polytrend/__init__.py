@@ -1,4 +1,3 @@
-"""Poly Trend V2 research runtime."""
+"""Poly Trend V3 research runtime."""
 
-__version__ = "2.0.0"
-
+__version__ = "3.0.0"

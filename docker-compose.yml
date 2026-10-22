@@ -1,155 +1,67 @@
-name: ${COMPOSE_PROJECT_NAME:-polytrend-v2}
-
+name: ${COMPOSE_PROJECT_NAME:-polytrend-v3}
 services:
   web:
     build:
       context: .
       dockerfile: infra/docker/web.Dockerfile
     environment:
-      NODE_ENV: production
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
-      NEXT_PUBLIC_RESEARCH_API_URL: ${NEXT_PUBLIC_RESEARCH_API_URL:-http://localhost:8000}
       INTERNAL_API_URL: http://api:8000
-    ports:
-      - "${WEB_PORT:-3000}:3000"
+    ports: ['${WEB_PORT:-3000}:3000']
     depends_on:
       api:
         condition: service_healthy
     restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
-        ]
-      interval: 15s
-      timeout: 5s
-      retries: 8
-      start_period: 30s
-
   api:
     build:
       context: .
       dockerfile: infra/docker/research.Dockerfile
-    command:
-      [
-        "uvicorn",
-        "polytrend.api:app",
-        "--host",
-        "0.0.0.0",
-        "--port",
-        "8000",
-        "--proxy-headers",
-      ]
-    environment: &research-environment
-      APP_ENV: production
-      DATABASE_URL: postgresql://polytrend:${POSTGRES_PASSWORD:-polytrend_dev_only}@postgres:5432/${POSTGRES_DB:-polytrend}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-polytrend_dev_only}@redis:6379/0
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com}
-      OPENAI_API_MODE: ${OPENAI_API_MODE:-auto}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.6-terra}
-      OPENAI_DEEP_MODEL: ${OPENAI_DEEP_MODEL:-gpt-5.6-sol}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.7-flash}
-      ALPHA_VANTAGE_API_KEY: ${ALPHA_VANTAGE_API_KEY:-}
-      ALPHA_VANTAGE_BASE_URL: ${ALPHA_VANTAGE_BASE_URL:-https://www.alphavantage.co/query}
-      FRED_API_KEY: ${FRED_API_KEY:-}
-      FRED_BASE_URL: ${FRED_BASE_URL:-https://api.stlouisfed.org/fred}
-      GDELT_BASE_URL: ${GDELT_BASE_URL:-https://api.gdeltproject.org/api/v2}
+    environment: &research
+      DATABASE_URL: postgresql://polytrend:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-polytrend}
+      POLYTREND_LIVE_MARKET_DATA: ${POLYTREND_LIVE_MARKET_DATA:-true}
       POLYMARKET_GAMMA_URL: ${POLYMARKET_GAMMA_URL:-https://gamma-api.polymarket.com}
       POLYMARKET_CLOB_URL: ${POLYMARKET_CLOB_URL:-https://clob.polymarket.com}
+      POLYMARKET_DATA_URL: ${POLYMARKET_DATA_URL:-https://data-api.polymarket.com/v2}
+      MARKET_CAPTURE_ENABLED: ${MARKET_CAPTURE_ENABLED:-false}
+      MARKET_SYNC_INTERVAL_SECONDS: ${MARKET_SYNC_INTERVAL_SECONDS:-300}
+      ALPHA_VANTAGE_API_KEY: ${ALPHA_VANTAGE_API_KEY:-}
+      FRED_API_KEY: ${FRED_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
       CORS_ORIGINS: http://localhost:${WEB_PORT:-3000}
-      TZ: Asia/Shanghai
-    ports:
-      - "${API_PORT:-8000}:8000"
+    ports: ['127.0.0.1:${API_PORT:-8000}:8000']
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - research_data:/app/data
     restart: unless-stopped
     healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)",
-        ]
+      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)"]
       interval: 15s
       timeout: 5s
       retries: 8
-      start_period: 20s
-
   worker:
+    profiles: ['worker']
     build:
       context: .
       dockerfile: infra/docker/research.Dockerfile
-    command: ["python", "-m", "polytrend.worker"]
-    environment:
-      <<: *research-environment
-      DAILY_REFRESH_TIME: ${DAILY_REFRESH_TIME:-08:00}
-      DAILY_REFRESH_TIMEZONE: ${DAILY_REFRESH_TIMEZONE:-Asia/Shanghai}
+    command: ['python', '-m', 'polytrend.worker']
+    environment: *research
     depends_on:
       api:
         condition: service_healthy
-    volumes:
-      - research_data:/app/data
     restart: unless-stopped
-
   postgres:
-    image: pgvector/pgvector:pg17
+    image: postgres:17-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-polytrend}
-      POSTGRES_USER: ${POSTGRES_USER:-polytrend}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-polytrend_dev_only}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/001-polytrend.sql:ro
+      POSTGRES_USER: polytrend
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes: ['postgres_data:/var/lib/postgresql/data']
     restart: unless-stopped
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-polytrend} -d ${POSTGRES_DB:-polytrend}",
-        ]
+      test: ['CMD-SHELL', 'pg_isready -U polytrend -d ${POSTGRES_DB:-polytrend}']
       interval: 10s
       timeout: 5s
       retries: 10
-
-  redis:
-    image: redis:7.4-alpine
-    command:
-      [
-        "redis-server",
-        "--appendonly",
-        "yes",
-        "--requirepass",
-        "${REDIS_PASSWORD:-polytrend_dev_only}",
-      ]
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "redis-cli -a '${REDIS_PASSWORD:-polytrend_dev_only}' ping | grep PONG",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
 volumes:
   postgres_data:
-  redis_data:
-  research_data:

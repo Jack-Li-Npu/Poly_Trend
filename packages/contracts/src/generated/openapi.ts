@@ -11,8 +11,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Healthz */
-        get: operations["healthz_healthz_get"];
+        /** Health */
+        get: operations["health_healthz_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -21,7 +21,111 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/mcp": {
+    "/api/v3/providers/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Providers Health */
+        get: operations["providers_health_api_v3_providers_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Events */
+        get: operations["events_api_v3_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Event Detail */
+        get: operations["event_detail_api_v3_events__event_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Cases */
+        get: operations["list_cases_api_v3_cases_get"];
+        put?: never;
+        /** Create Case */
+        post: operations["create_case_api_v3_cases_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/cases/{case_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Case Detail */
+        get: operations["case_detail_api_v3_cases__case_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Case */
+        patch: operations["update_case_api_v3_cases__case_id__patch"];
+        trace?: never;
+    };
+    "/api/v3/cases/{case_id}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Revisions */
+        get: operations["revisions_api_v3_cases__case_id__revisions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/cases/{case_id}/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -30,75 +134,23 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Mcp Adapter */
-        post: operations["mcp_adapter_mcp_post"];
+        /** Start Run */
+        post: operations["start_run_api_v3_cases__case_id__runs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/investigations": {
+    "/api/v3/runs/{run_id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        /** Create Investigation */
-        post: operations["create_investigation_api_v1_investigations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/investigations/{investigation_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Investigation */
-        get: operations["get_investigation_api_v1_investigations__investigation_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Patch Investigation */
-        patch: operations["patch_investigation_api_v1_investigations__investigation_id__patch"];
-        trace?: never;
-    };
-    "/api/v1/investigations/{investigation_id}/runs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create Run */
-        post: operations["create_run_api_v1_investigations__investigation_id__runs_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/runs/{run_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Run */
-        get: operations["get_run_api_v1_runs__run_id__get"];
+        /** Run Detail */
+        get: operations["run_detail_api_v3_runs__run_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -107,15 +159,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/runs/{run_id}/trace": {
+    "/api/v3/runs/{run_id}/events": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Run Trace */
-        get: operations["get_run_trace_api_v1_runs__run_id__trace_get"];
+        /** Run Events */
+        get: operations["run_events_api_v3_runs__run_id__events_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -124,7 +176,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/runs/{run_id}/cancel": {
+    "/api/v3/runs/{run_id}/cancel": {
         parameters: {
             query?: never;
             header?: never;
@@ -134,31 +186,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Cancel Run */
-        post: operations["cancel_run_api_v1_runs__run_id__cancel_post"];
+        post: operations["cancel_run_api_v3_runs__run_id__cancel_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/runs/{run_id}/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Stream Events */
-        get: operations["stream_events_api_v1_runs__run_id__events_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/runs/{run_id}/fork": {
+    "/api/v3/runs/{run_id}/resume": {
         parameters: {
             query?: never;
             header?: never;
@@ -167,23 +202,23 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Fork Run */
-        post: operations["fork_run_api_v1_runs__run_id__fork_post"];
+        /** Resume Run */
+        post: operations["resume_run_api_v3_runs__run_id__resume_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/markets/{market_id}": {
+    "/api/v3/runs/{run_id}/export": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Market */
-        get: operations["get_market_api_v1_markets__market_id__get"];
+        /** Export Run */
+        get: operations["export_run_api_v3_runs__run_id__export_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -192,15 +227,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/assets/{symbol}/snapshot": {
+    "/api/v3/simulations": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Asset Snapshot */
-        get: operations["get_asset_snapshot_api_v1_assets__symbol__snapshot_get"];
+        get?: never;
+        put?: never;
+        /** Simulation */
+        post: operations["simulation_api_v3_simulations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import History */
+        post: operations["import_history_api_v3_imports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Observations */
+        get: operations["observations_api_v3_observations_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -209,15 +278,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/providers/health": {
+    "/api/v3/evaluations": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Provider Health */
-        get: operations["provider_health_api_v1_providers_health_get"];
+        /** Evaluations */
+        get: operations["evaluations_api_v3_evaluations_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -230,55 +299,709 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AgentMessage */
-        AgentMessage: {
+        /** AssetSeries */
+        AssetSeries: {
+            /** Symbol */
+            symbol: string;
+            /** Provider */
+            provider: string;
+            /** Source Url */
+            source_url: string;
+            /** Points */
+            points?: components["schemas"]["SeriesPoint"][];
+            /** Observation Ids */
+            observation_ids?: string[];
+            /**
+             * Interval
+             * @default daily
+             * @enum {string}
+             */
+            interval: "daily" | "hourly" | "minute";
+            /**
+             * Adjustment
+             * @default raw
+             * @enum {string}
+             */
+            adjustment: "raw" | "split_adjusted" | "total_return" | "yield" | "unknown";
+            /**
+             * Unit
+             * @default USD
+             * @enum {string}
+             */
+            unit: "USD" | "percent" | "index";
+            /** Issues */
+            issues?: string[];
+        };
+        /** AttentionSummary */
+        AttentionSummary: {
+            /** Market Id */
+            market_id: string;
+            /** Question */
+            question: string;
+            /** Probability */
+            probability?: number | null;
+            /** Delta 1D Pp */
+            delta_1d_pp?: number | null;
+            /** Delta 7D Pp */
+            delta_7d_pp?: number | null;
+            /** Delta 30D Pp */
+            delta_30d_pp?: number | null;
+            /**
+             * Quote Type
+             * @default unavailable
+             */
+            quote_type: string;
+            /** Spread Pp */
+            spread_pp?: number | null;
+            /** Bid Depth Usd */
+            bid_depth_usd?: number | null;
+            /** Ask Depth Usd */
+            ask_depth_usd?: number | null;
+            /** As Of */
+            as_of?: string | null;
+            /**
+             * History Status
+             * @default insufficient
+             */
+            history_status: string;
+            /** Issues */
+            issues?: string[];
+            /** Score */
+            score?: number | null;
+            /** Comparison 1D At */
+            comparison_1d_at?: string | null;
+            /** Comparison 7D At */
+            comparison_7d_at?: string | null;
+            /** Comparison 30D At */
+            comparison_30d_at?: string | null;
+            /** Window 1D Elapsed Hours */
+            window_1d_elapsed_hours?: number | null;
+            /** Window 7D Elapsed Hours */
+            window_7d_elapsed_hours?: number | null;
+            /** Window 30D Elapsed Hours */
+            window_30d_elapsed_hours?: number | null;
+        };
+        /** CaseCreate */
+        CaseCreate: {
+            /** Event Id */
+            event_id: string;
+            /** Assets */
+            assets?: string[];
+            /**
+             * Thesis
+             * @default
+             */
+            thesis: string;
+            /** Assumptions */
+            assumptions?: string[];
+            /** Rules */
+            rules?: components["schemas"]["InvalidationRule"][];
+            /**
+             * Source Mode
+             * @default live
+             * @enum {string}
+             */
+            source_mode: "live" | "recorded";
+        };
+        /** CaseDetail */
+        CaseDetail: {
+            case: components["schemas"]["ResearchCase"];
+            event: components["schemas"]["EventDefinition"];
+            /** Runs */
+            runs: components["schemas"]["ResearchRun"][];
+        };
+        /** CasePatch */
+        CasePatch: {
+            /** Thesis */
+            thesis?: string | null;
+            /** Assumptions */
+            assumptions?: string[] | null;
+            /** Rules */
+            rules?: components["schemas"]["InvalidationRule"][] | null;
+            /** Refresh Enabled */
+            refresh_enabled?: boolean | null;
+            /** Archived */
+            archived?: boolean | null;
+        };
+        /** Claim */
+        Claim: {
             /** Id */
             id?: string;
-            /** Sequence */
-            sequence: number;
-            /** From Agent */
-            from_agent: string;
-            /** To Agent */
-            to_agent: string;
-            /** Message Type */
-            message_type: string;
-            /** Summary */
-            summary: string;
-            /** Task Id */
-            task_id?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "observation" | "calculation" | "hypothesis" | "scenario";
+            /** Title */
+            title: string;
+            /** Text */
+            text: string;
             /** Evidence Ids */
             evidence_ids?: string[];
+            /** Method */
+            method?: string | null;
+            /** Assumptions */
+            assumptions?: string[];
+            /**
+             * Status
+             * @default source_linked
+             * @enum {string}
+             */
+            status: "source_linked" | "experimental" | "insufficient" | "validated";
+        };
+        /** ContextItem */
+        ContextItem: {
+            /** Id */
+            id?: string;
+            /** Title */
+            title: string;
+            /** Source Url */
+            source_url: string;
+            /** Summary */
+            summary: string;
+            /** Published At */
+            published_at?: string | null;
+            /**
+             * Available At
+             * Format: date-time
+             */
+            available_at: string;
+            /** Observation Ids */
+            observation_ids?: string[];
+            /**
+             * Stance
+             * @default context
+             * @enum {string}
+             */
+            stance: "supporting" | "contradicting" | "context";
+        };
+        /** Contract */
+        Contract: {
+            /** Id */
+            id: string;
+            /** Event Id */
+            event_id: string;
+            /** Condition Id */
+            condition_id: string;
+            /** Question */
+            question: string;
+            /** Outcomes */
+            outcomes?: string[];
+            /** Token Ids */
+            token_ids?: string[];
+            /** Prices */
+            prices?: (number | null)[];
+            /**
+             * Protocol Version
+             * @default unknown
+             */
+            protocol_version: string;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Resolution Rules
+             * @default
+             */
+            resolution_rules: string;
+            /** Resolution Source */
+            resolution_source?: string | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /**
+             * Closed
+             * @default false
+             */
+            closed: boolean;
+            /**
+             * Neg Risk
+             * @default false
+             */
+            neg_risk: boolean;
+            /** Group Label */
+            group_label?: string | null;
+            /** Group Threshold */
+            group_threshold?: number | null;
+        };
+        /** EvaluationReport */
+        EvaluationReport: {
+            /**
+             * Method Version
+             * @default v3.0.0
+             */
+            method_version: string;
+            /** Calibration */
+            calibration?: {
+                [key: string]: unknown;
+            };
+            /** Asset Prediction */
+            asset_prediction?: {
+                [key: string]: unknown;
+            };
+            /** Simulation */
+            simulation?: {
+                [key: string]: unknown;
+            };
+            /** Limitations */
+            limitations?: string[];
+        };
+        /** EventDefinition */
+        EventDefinition: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Slug */
+            slug: string;
+            /**
+             * Category
+             * @default other
+             */
+            category: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Source Url */
+            source_url: string;
+            /** Deadline */
+            deadline?: string | null;
+            /** Contracts */
+            contracts?: components["schemas"]["Contract"][];
+            /** Relations */
+            relations?: components["schemas"]["LogicRelation"][];
+            /** Asset Links */
+            asset_links?: {
+                [key: string]: string;
+            };
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at?: string;
+            /**
+             * Origin
+             * @default live
+             * @enum {string}
+             */
+            origin: "live" | "recorded" | "synthetic" | "imported";
+            attention?: components["schemas"]["AttentionSummary"] | null;
+        };
+        /** EventList */
+        EventList: {
+            /** Events */
+            events: components["schemas"]["EventDefinition"][];
+            /** Issues */
+            issues?: string[];
+            /**
+             * Source Mode
+             * @default live
+             * @enum {string}
+             */
+            source_mode: "live" | "recorded";
+        };
+        /** EvidenceBundle */
+        EvidenceBundle: {
+            event: components["schemas"]["EventDefinition"];
+            /** Observations */
+            observations?: components["schemas"]["Observation"][];
+            /** Markets */
+            markets?: components["schemas"]["MarketSnapshot"][];
+            /** Assets */
+            assets?: components["schemas"]["AssetSeries"][];
+            /** Context */
+            context?: components["schemas"]["ContextItem"][];
+            /** Issues */
+            issues?: string[];
+            /**
+             * Captured At
+             * Format: date-time
+             */
+            captured_at?: string;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** ImportRequest */
+        ImportRequest: {
+            /** Symbol */
+            symbol: string;
+            /** Csv */
+            csv: string;
+            /** Source Url */
+            source_url: string;
+            /**
+             * Adjustment
+             * @enum {string}
+             */
+            adjustment: "raw" | "split_adjusted" | "total_return" | "yield" | "unknown";
+        };
+        /** InvalidationRule */
+        InvalidationRule: {
+            /** Id */
+            id?: string;
+            /** Label */
+            label: string;
+            /** Market Id */
+            market_id: string;
+            /**
+             * Operator
+             * @enum {string}
+             */
+            operator: "above" | "below";
+            /** Threshold */
+            threshold: number;
+            /**
+             * State
+             * @default pending
+             * @enum {string}
+             */
+            state: "pending" | "triggered" | "clear" | "missing" | "stale";
+        };
+        /** JointPayoffs */
+        JointPayoffs: {
+            /** Both */
+            both: number;
+            /** First Only */
+            first_only: number;
+            /** Second Only */
+            second_only: number;
+            /** Neither */
+            neither: number;
+        };
+        /** LogicRelation */
+        LogicRelation: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "complement" | "exclusive" | "exhaustive" | "implies" | "nested_deadline" | "nested_threshold";
+            /** Market Ids */
+            market_ids: string[];
+            /**
+             * Verified
+             * @default false
+             */
+            verified: boolean;
+            /** Rationale */
+            rationale: string;
+        };
+        /** MarketSnapshot */
+        MarketSnapshot: {
+            /** Market Id */
+            market_id: string;
+            /** Condition Id */
+            condition_id: string;
+            /** Token Id */
+            token_id: string;
+            /**
+             * Outcome
+             * @default Yes
+             */
+            outcome: string;
+            /** Probability */
+            probability?: number | null;
+            /** Bid */
+            bid?: number | null;
+            /** Ask */
+            ask?: number | null;
+            /**
+             * Quote Type
+             * @default unavailable
+             * @enum {string}
+             */
+            quote_type: "midpoint" | "last_trade" | "gamma" | "unavailable";
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Spread */
+            spread?: number | null;
+            /** Bid Depth Usd */
+            bid_depth_usd?: number | null;
+            /** Ask Depth Usd */
+            ask_depth_usd?: number | null;
+            /** Tick Size */
+            tick_size?: number | null;
+            /** Fee Rate */
+            fee_rate?: number | null;
+            /** Volume 24H Usd */
+            volume_24h_usd?: number | null;
+            /** Open Interest Shares */
+            open_interest_shares?: number | null;
+            /** Open Interest Usd */
+            open_interest_usd?: number | null;
+            /** Trade Count */
+            trade_count?: number | null;
+            /** Taker Net Shares */
+            taker_net_shares?: number | null;
+            /** Taker Net Notional Usd */
+            taker_net_notional_usd?: number | null;
+            /** Unique Participants */
+            unique_participants?: number | null;
+            /** Top Holder Share */
+            top_holder_share?: number | null;
+            /** Holder Coverage */
+            holder_coverage?: string | null;
+            /** History */
+            history?: components["schemas"]["SeriesPoint"][];
+            /** Observation Ids */
+            observation_ids?: string[];
+            /** Issues */
+            issues?: string[];
+        };
+        /** Observation */
+        Observation: {
+            /** Id */
+            id?: string;
+            /** Provider */
+            provider: string;
+            /** Kind */
+            kind: string;
+            /** External Id */
+            external_id: string;
+            /** Source Url */
+            source_url: string;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * Retrieved At
+             * Format: date-time
+             */
+            retrieved_at?: string;
+            /**
+             * Available At
+             * Format: date-time
+             */
+            available_at: string;
+            /** Published At */
+            published_at?: string | null;
+            /**
+             * Origin
+             * @default live
+             * @enum {string}
+             */
+            origin: "live" | "recorded" | "synthetic" | "imported";
+            /**
+             * Historical Reconstruction
+             * @default false
+             */
+            historical_reconstruction: boolean;
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Content Hash
+             * @default
+             */
+            content_hash: string;
+        };
+        /** ProgressEvent */
+        ProgressEvent: {
+            /** Sequence */
+            sequence: number;
+            /** Stage */
+            stage: string;
+            /** Message */
+            message: string;
             /**
              * Timestamp
              * Format: date-time
              */
             timestamp?: string;
         };
-        /** AnalysisFinding */
-        AnalysisFinding: {
+        /** ResearchCase */
+        ResearchCase: {
+            /** Event Id */
+            event_id: string;
+            /** Assets */
+            assets?: string[];
+            /**
+             * Thesis
+             * @default
+             */
+            thesis: string;
+            /** Assumptions */
+            assumptions?: string[];
+            /** Rules */
+            rules?: components["schemas"]["InvalidationRule"][];
+            /**
+             * Source Mode
+             * @default live
+             * @enum {string}
+             */
+            source_mode: "live" | "recorded";
             /** Id */
             id?: string;
-            /** Task Id */
-            task_id: string;
-            /** Agent Name */
-            agent_name: string;
-            /** Summary */
-            summary: string;
-            /** Evidence Ids */
-            evidence_ids?: string[];
+            /** Title */
+            title: string;
             /**
-             * Confidence
-             * @default 0.5
+             * Created At
+             * Format: date-time
              */
-            confidence: number;
+            created_at?: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * Revision
+             * @default 1
+             */
+            revision: number;
+            /**
+             * Refresh Enabled
+             * @default false
+             */
+            refresh_enabled: boolean;
+            /**
+             * Archived
+             * @default false
+             */
+            archived: boolean;
+            /** Latest Run Id */
+            latest_run_id?: string | null;
         };
-        /**
-         * AnswerKind
-         * @enum {string}
-         */
-        AnswerKind: "market_implied" | "model_estimate" | "directional_assessment" | "insufficient";
-        /** AssetPricePoint */
-        AssetPricePoint: {
+        /** ResearchRun */
+        ResearchRun: {
+            /** Id */
+            id?: string;
+            /** Case Id */
+            case_id: string;
+            /**
+             * Mode
+             * @default refresh
+             * @enum {string}
+             */
+            mode: "refresh" | "replay" | "scenario" | "historical";
+            /**
+             * Status
+             * @default queued
+             * @enum {string}
+             */
+            status: "queued" | "running" | "completed" | "failed" | "cancelled" | "interrupted";
+            /** Parent Run Id */
+            parent_run_id?: string | null;
+            /** As Of */
+            as_of?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * Method Version
+             * @default v3.0.0
+             */
+            method_version: string;
+            /**
+             * Seed
+             * @default 42
+             */
+            seed: number;
+            case_snapshot?: components["schemas"]["ResearchCase"] | null;
+            /** Bundle Id */
+            bundle_id?: string | null;
+            /** Snapshot Hash */
+            snapshot_hash?: string | null;
+            /** Claims */
+            claims?: components["schemas"]["Claim"][];
+            /** Metrics */
+            metrics?: {
+                [key: string]: unknown;
+            };
+            /** Progress */
+            progress?: components["schemas"]["ProgressEvent"][];
+            /** Limitations */
+            limitations?: string[];
+            /** Rules */
+            rules?: components["schemas"]["InvalidationRule"][];
+            scenario?: components["schemas"]["ScenarioAssumptions"] | null;
+            /** Error */
+            error?: string | null;
+        };
+        /** RunCreate */
+        RunCreate: {
+            /**
+             * Mode
+             * @default refresh
+             * @enum {string}
+             */
+            mode: "refresh" | "replay" | "scenario" | "historical";
+            /** Parent Run Id */
+            parent_run_id?: string | null;
+            /** As Of */
+            as_of?: string | null;
+            scenario?: components["schemas"]["ScenarioAssumptions"] | null;
+        };
+        /** RunDetail */
+        RunDetail: {
+            run: components["schemas"]["ResearchRun"];
+            bundle?: components["schemas"]["EvidenceBundle"] | null;
+            presentation?: components["schemas"]["EvidenceBundle"] | null;
+        };
+        /** ScenarioAssumptions */
+        ScenarioAssumptions: {
+            /**
+             * Probability
+             * @default 0.7
+             */
+            probability: number;
+            /**
+             * Event Return
+             * @default 0.05
+             */
+            event_return: number;
+            /**
+             * Non Event Return
+             * @default -0.2
+             */
+            non_event_return: number;
+            /**
+             * Round Trip Cost Bps
+             * @default 20
+             */
+            round_trip_cost_bps: number;
+            /**
+             * Capital
+             * @default 10000
+             */
+            capital: number;
+            /**
+             * Holding Sessions
+             * @default 20
+             */
+            holding_sessions: number;
+            /**
+             * Assumption Source
+             * @default user
+             * @constant
+             */
+            assumption_source: "user";
+            /** Joint Probability */
+            joint_probability?: number | null;
+            /** Second Event Probability */
+            second_event_probability?: number | null;
+            joint_payoffs?: components["schemas"]["JointPayoffs"] | null;
+        };
+        /** SeriesPoint */
+        SeriesPoint: {
             /**
              * Timestamp
              * Format: date-time
@@ -286,802 +1009,59 @@ export interface components {
             timestamp: string;
             /** Value */
             value: number;
+            /** Available At */
+            available_at?: string | null;
         };
-        /** AssetSnapshot */
-        AssetSnapshot: {
+        /** SimulationRequest */
+        SimulationRequest: {
+            assumptions: components["schemas"]["ScenarioAssumptions"];
+            /** Run Id */
+            run_id?: string | null;
             /** Symbol */
-            symbol: string;
-            /** Name */
-            name: string;
-            /**
-             * Currency
-             * @default USD
-             */
-            currency: string;
-            /** Price */
-            price: number;
-            /**
-             * As Of
-             * Format: date-time
-             */
-            as_of: string;
-            /** Source */
-            source: string;
-            /** Source Url */
-            source_url?: string | null;
-            /**
-             * Freshness
-             * @default live
-             */
-            freshness: string;
-            /** History */
-            history?: components["schemas"]["AssetPricePoint"][];
+            symbol?: string | null;
+            /** Decision At */
+            decision_at?: string | null;
         };
-        /**
-         * CoverageState
-         * @enum {string}
-         */
-        CoverageState: "good" | "limited" | "insufficient";
-        /** DecisionRecord */
-        DecisionRecord: {
-            /** Id */
-            id?: string;
-            /** Agent */
-            agent: string;
-            /** Decision */
-            decision: string;
-            /** Rationale Summary */
-            rationale_summary: string;
-            /** Evidence Ids */
-            evidence_ids?: string[];
-            /**
-             * Confidence
-             * @default 0.5
-             */
-            confidence: number;
-            /**
-             * Timestamp
-             * Format: date-time
-             */
-            timestamp?: string;
-        };
-        /** EvidenceGraph */
-        EvidenceGraph: {
-            query_node: components["schemas"]["EvidenceNode"];
-            /** Nodes */
-            nodes?: components["schemas"]["EvidenceNode"][];
-            /** Edges */
-            edges?: components["schemas"]["RelationshipEdge"][];
-        };
-        /** EvidenceItem */
-        EvidenceItem: {
-            /** Id */
-            id?: string;
-            /** Kind */
-            kind: string;
-            /** Title */
-            title: string;
-            /** Source */
-            source: string;
-            /** Url */
-            url?: string | null;
-            /** Published At */
-            published_at?: string | null;
-            /**
-             * Summary
-             * @default
-             */
-            summary: string;
-            /**
-             * Supports Numeric Answer
-             * @default false
-             */
-            supports_numeric_answer: boolean;
-            /** Provider */
-            provider?: string | null;
-            /**
-             * Retrieved At
-             * Format: date-time
-             */
-            retrieved_at?: string;
-            /**
-             * Freshness
-             * @default unknown
-             */
-            freshness: string;
-        };
-        /** EvidenceNode */
-        EvidenceNode: {
-            /** Id */
-            id: string;
-            /** Kind */
-            kind: string;
-            /** Label */
-            label: string;
-            /** Value */
-            value?: string | null;
-            /** Source */
-            source?: string | null;
-            /**
-             * Relevance
-             * @default 0.5
-             */
-            relevance: number;
-            /**
-             * Included
-             * @default true
-             */
-            included: boolean;
-            /** Evidence Id */
-            evidence_id?: string | null;
-        };
-        /** ForecastEstimate */
-        ForecastEstimate: {
-            /** Symbol */
-            symbol: string;
-            condition: components["schemas"]["TargetCondition"];
-            /** Current Value */
-            current_value: number;
-            /** Target Value */
-            target_value: number;
-            /** Target Gap */
-            target_gap: number;
-            /**
-             * Deadline
-             * Format: date-time
-             */
-            deadline: string;
-            /** Days Remaining */
-            days_remaining: number;
-            /** Probability */
-            probability: number;
-            /** Probability Range */
-            probability_range: [
-                number,
-                number
-            ];
-            /** Verdict */
-            verdict: string;
-            /** Confidence */
-            confidence: number;
-            /** Realized Volatility 20D */
-            realized_volatility_20d: number;
-            /** Model Probabilities */
-            model_probabilities?: {
+        /** SimulationResult */
+        SimulationResult: {
+            /** Expected Return */
+            expected_return: number;
+            /** Expected Pnl */
+            expected_pnl: number;
+            /** Event Pnl */
+            event_pnl: number;
+            /** Non Event Pnl */
+            non_event_pnl: number;
+            /** Break Even Probability */
+            break_even_probability: number | null;
+            /** Feasible Break Even */
+            feasible_break_even: boolean;
+            /** Cost Fraction */
+            cost_fraction: number;
+            /** Sensitivity */
+            sensitivity?: {
                 [key: string]: number;
-            };
-            /**
-             * Paths
-             * @default 20000
-             */
-            paths: number;
-            /** Methodology */
-            methodology: string;
-            /** Evidence Ids */
-            evidence_ids?: string[];
-            /**
-             * As Of
-             * Format: date-time
-             */
-            as_of?: string;
-        };
-        /** ForkCreate */
-        ForkCreate: {
-            /** Included Market Ids */
-            included_market_ids: string[];
-        };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
-        /** Investigation */
-        Investigation: {
-            /** Id */
-            id?: string;
-            /** Query */
-            query: string;
-            /** @default manual */
-            refresh_policy: components["schemas"]["RefreshPolicy"];
-            /**
-             * Deep Mode
-             * @default false
-             */
-            deep_mode: boolean;
-            /** @default standard */
-            mode: components["schemas"]["InvestigationMode"];
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at?: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at?: string;
-            /** Latest Run Id */
-            latest_run_id?: string | null;
-            /** Run Ids */
-            run_ids?: string[];
-            /** Next Refresh At */
-            next_refresh_at?: string | null;
-            /**
-             * Archived
-             * @default false
-             */
-            archived: boolean;
-        };
-        /** InvestigationCreate */
-        InvestigationCreate: {
-            /** Query */
-            query: string;
-            /** @default manual */
-            refresh_policy: components["schemas"]["RefreshPolicy"];
-            /**
-             * Deep Mode
-             * @default false
-             */
-            deep_mode: boolean;
-            /** @default standard */
-            mode: components["schemas"]["InvestigationMode"];
-        };
-        /**
-         * InvestigationMode
-         * @enum {string}
-         */
-        InvestigationMode: "fast" | "standard" | "deep";
-        /** InvestigationPatch */
-        InvestigationPatch: {
-            refresh_policy?: components["schemas"]["RefreshPolicy"] | null;
-            /** Deep Mode */
-            deep_mode?: boolean | null;
-            /** Archived */
-            archived?: boolean | null;
-            mode?: components["schemas"]["InvestigationMode"] | null;
-        };
-        /** MarketImpliedAnswer */
-        MarketImpliedAnswer: {
-            /** Conclusion */
-            conclusion: string;
-            /** Label */
-            label: string;
-            /** Probability */
-            probability?: number | null;
-            /** Market Range */
-            market_range?: [
+            }[];
+            /** Joint Bounds */
+            joint_bounds?: [
                 number,
                 number
             ] | null;
-            /**
-             * Agreement
-             * @default 0
-             */
-            agreement: number;
-            coverage: components["schemas"]["CoverageState"];
-            /** Takeaways */
-            takeaways?: string[];
-            /** Evidence Ids */
-            evidence_ids?: string[];
-            /** Excluded Market Ids */
-            excluded_market_ids?: string[];
-            /** Methodology */
-            methodology: string;
-            /** Caveats */
-            caveats?: string[];
-            /**
-             * As Of
-             * Format: date-time
-             */
-            as_of?: string;
-            /** Provider Freshness */
-            provider_freshness?: {
-                [key: string]: string;
-            };
-            /** @default market_implied */
-            answer_kind: components["schemas"]["AnswerKind"];
-            /** Verdict */
-            verdict?: string | null;
-            /** Confidence */
-            confidence?: number | null;
-            /** Current Value */
-            current_value?: number | null;
-            /** Target Value */
-            target_value?: number | null;
-            /** Target Gap */
-            target_gap?: number | null;
-            /** Deadline */
-            deadline?: string | null;
-            /** Days Remaining */
-            days_remaining?: number | null;
-            forecast?: components["schemas"]["ForecastEstimate"] | null;
-            /** Citations */
-            citations?: components["schemas"]["SourceCitation"][];
-        };
-        /** MarketSnapshot */
-        MarketSnapshot: {
-            /** Id */
-            id: string;
-            /** Question */
-            question: string;
-            /** Slug */
-            slug: string;
-            /** Event Id */
-            event_id?: string | null;
-            /** Event Title */
-            event_title?: string | null;
-            /** Clob Token Id */
-            clob_token_id?: string | null;
-            /** Probability */
-            probability: number;
-            /**
-             * Probability Change 24H
-             * @default 0
-             */
-            probability_change_24h: number;
-            /**
-             * Volume 24H
-             * @default 0
-             */
-            volume_24h: number;
-            /**
-             * Volume Total
-             * @default 0
-             */
-            volume_total: number;
-            /**
-             * Liquidity
-             * @default 0
-             */
-            liquidity: number;
-            /**
-             * Open Interest
-             * @default 0
-             */
-            open_interest: number;
-            /** Best Bid */
-            best_bid?: number | null;
-            /** Best Ask */
-            best_ask?: number | null;
-            /** Spread */
-            spread?: number | null;
-            /** End Date */
-            end_date?: string | null;
-            /**
-             * Resolution Criteria
-             * @default
-             */
-            resolution_criteria: string;
-            /** Resolution Source */
-            resolution_source?: string | null;
-            /** Url */
-            url: string;
-            /** Tags */
-            tags?: string[];
-            /** Retrieval Sources */
-            retrieval_sources?: string[];
-            /**
-             * Relevance
-             * @default 0
-             */
-            relevance: number;
-            /** @default direct */
-            relation_type: components["schemas"]["RelationType"];
-            /**
-             * Relation Confidence
-             * @default 0.5
-             */
-            relation_confidence: number;
-            /**
-             * Relation Reason
-             * @default
-             */
-            relation_reason: string;
-            /**
-             * Included
-             * @default true
-             */
-            included: boolean;
-            /**
-             * Quality
-             * @default 0.5
-             */
-            quality: number;
-            /**
-             * Freshness
-             * @default live
-             */
-            freshness: string;
-            /** History */
-            history?: components["schemas"]["PricePoint"][];
-        };
-        /** PricePoint */
-        PricePoint: {
-            /**
-             * Timestamp
-             * Format: date-time
-             */
-            timestamp: string;
-            /** Probability */
-            probability: number;
-        };
-        /** QueryIntent */
-        QueryIntent: {
-            /** Proposition */
-            proposition: string;
-            /** Entities */
-            entities?: string[];
-            /** Geography */
-            geography?: string | null;
-            /** Horizon */
-            horizon?: string | null;
-            /** Target Year */
-            target_year?: number | null;
-            /**
-             * Outcome
-             * @default yes
-             */
-            outcome: string;
-            /**
-             * Ambiguous
-             * @default false
-             */
-            ambiguous: boolean;
-            /** Asset */
-            asset?: string | null;
-            /** Symbol */
-            symbol?: string | null;
-            /** Target Value */
-            target_value?: number | null;
-            /**
-             * Currency
-             * @default USD
-             */
-            currency: string;
-            target_condition?: components["schemas"]["TargetCondition"] | null;
-            /** Deadline */
-            deadline?: string | null;
-            /**
-             * Timezone
-             * @default Asia/Shanghai
-             */
-            timezone: string;
-            requested_answer_type?: components["schemas"]["AnswerKind"] | null;
-        };
-        /**
-         * RefreshPolicy
-         * @enum {string}
-         */
-        RefreshPolicy: "manual" | "daily";
-        /**
-         * RelationType
-         * @enum {string}
-         */
-        RelationType: "direct" | "duplicate" | "complement" | "supporting_proxy" | "conflicting_proxy" | "measured_correlation" | "external_context";
-        /** RelationshipEdge */
-        RelationshipEdge: {
-            /** Id */
-            id?: string;
-            /** Source Id */
-            source_id: string;
-            /** Target Id */
-            target_id: string;
-            relation_type: components["schemas"]["RelationType"];
-            /** Confidence */
-            confidence: number;
-            /** Explanation */
-            explanation: string;
-            /** Measured Correlation */
-            measured_correlation?: number | null;
-            /** Observation Count */
-            observation_count?: number | null;
-        };
-        /** ResearchPlan */
-        ResearchPlan: {
-            mode: components["schemas"]["InvestigationMode"];
-            /** Tasks */
-            tasks: components["schemas"]["ResearchTask"][];
-            budget: components["schemas"]["RunBudget"];
-            /** Stopping Conditions */
-            stopping_conditions?: string[];
-            /**
-             * Manager Provider
-             * @default deterministic
-             */
-            manager_provider: string;
-            /**
-             * Manager Model
-             * @default policy-v1
-             */
-            manager_model: string;
-        };
-        /** ResearchRun */
-        ResearchRun: {
-            /** Id */
-            id?: string;
-            /** Investigation Id */
-            investigation_id: string;
-            /** Query */
-            query: string;
-            /** @default queued */
-            status: components["schemas"]["RunStatus"];
-            /**
-             * Deep Mode
-             * @default false
-             */
-            deep_mode: boolean;
-            /** @default standard */
-            mode: components["schemas"]["InvestigationMode"];
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at?: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at?: string;
-            intent?: components["schemas"]["QueryIntent"] | null;
-            /** Markets */
-            markets?: components["schemas"]["MarketSnapshot"][];
-            /** Relationships */
-            relationships?: components["schemas"]["RelationshipEdge"][];
-            /** Context */
-            context?: components["schemas"]["EvidenceItem"][];
-            answer?: components["schemas"]["MarketImpliedAnswer"] | null;
-            /** Events */
-            events?: components["schemas"]["RunEvent"][];
-            /** Traces */
-            traces?: components["schemas"]["TraceSpan"][];
-            diff?: components["schemas"]["RunDiff"] | null;
-            /** Error */
-            error?: string | null;
-            plan?: components["schemas"]["ResearchPlan"] | null;
-            /** Workers */
-            workers?: components["schemas"]["WorkerRun"][];
-            /** Tool Observations */
-            tool_observations?: components["schemas"]["ToolObservation"][];
-            evidence_graph?: components["schemas"]["EvidenceGraph"] | null;
-            asset_snapshot?: components["schemas"]["AssetSnapshot"] | null;
-            forecast?: components["schemas"]["ForecastEstimate"] | null;
-            quality_report?: components["schemas"]["RunQualityReport"] | null;
-            /** Agent Messages */
-            agent_messages?: components["schemas"]["AgentMessage"][];
-            /** Decision Records */
-            decision_records?: components["schemas"]["DecisionRecord"][];
-            /** Analysis Findings */
-            analysis_findings?: components["schemas"]["AnalysisFinding"][];
-            /**
-             * Cancelled
-             * @default false
-             */
-            cancelled: boolean;
-        };
-        /** ResearchTask */
-        ResearchTask: {
-            /** Id */
-            id: string;
-            /** Worker Type */
-            worker_type: string;
-            /**
-             * Agent Name
-             * @default Legacy worker
-             */
-            agent_name: string;
-            /** Objective */
-            objective: string;
-            /** Tools */
-            tools?: string[];
-            /** Depends On */
-            depends_on?: string[];
-            /**
-             * Wave
-             * @default 1
-             */
-            wave: number;
-            /** Query Variant */
-            query_variant?: string | null;
-            /**
-             * Deliver To
-             * @default evidence_desk
-             */
-            deliver_to: string;
-            /** Success Criteria */
-            success_criteria?: string[];
-            /** Parameters */
-            parameters?: {
+            /** Joint Scenario */
+            joint_scenario?: {
                 [key: string]: unknown;
-            };
+            } | null;
             /**
-             * Required
-             * @default true
+             * Assumption Source
+             * @default user
              */
-            required: boolean;
-        };
-        /** RunBudget */
-        RunBudget: {
-            /** Max Workers */
-            max_workers: number;
-            /** Max Tool Calls */
-            max_tool_calls: number;
-            /** Max Concurrency */
-            max_concurrency: number;
-            /** Timeout Seconds */
-            timeout_seconds: number;
-        };
-        /** RunCreate */
-        RunCreate: {
-            /** Included Market Ids */
-            included_market_ids?: string[] | null;
-            mode?: components["schemas"]["InvestigationMode"] | null;
-        };
-        /** RunDiff */
-        RunDiff: {
-            /** Prior Run Id */
-            prior_run_id?: string | null;
-            /** Probability Change */
-            probability_change?: number | null;
-            /** Added Market Ids */
-            added_market_ids?: string[];
-            /** Removed Market Ids */
-            removed_market_ids?: string[];
-            /**
-             * Changed Evidence Count
-             * @default 0
-             */
-            changed_evidence_count: number;
-        };
-        /** RunEvent */
-        RunEvent: {
-            /** Sequence */
-            sequence: number;
-            /** Stage */
-            stage: string;
-            /** Label */
-            label: string;
-            /**
-             * Status
-             * @default completed
-             */
-            status: string;
-            /**
-             * Timestamp
-             * Format: date-time
-             */
-            timestamp?: string;
-            /** Duration Ms */
-            duration_ms?: number | null;
-            /** Details */
-            details?: {
+            assumption_source: string;
+            /** Historical Result */
+            historical_result?: {
                 [key: string]: unknown;
-            };
-        };
-        /** RunQualityReport */
-        RunQualityReport: {
-            /**
-             * Passed
-             * @default false
-             */
-            passed: boolean;
-            /**
-             * Supported Numeric Claims
-             * @default 0
-             */
-            supported_numeric_claims: number;
-            /** Missing Evidence Ids */
-            missing_evidence_ids?: string[];
-            /**
-             * Bounded Corrections
-             * @default 0
-             */
-            bounded_corrections: number;
-            /** Warnings */
-            warnings?: string[];
-        };
-        /**
-         * RunStatus
-         * @enum {string}
-         */
-        RunStatus: "queued" | "running" | "completed" | "failed" | "cancelled";
-        /** SourceCitation */
-        SourceCitation: {
-            /** Evidence Id */
-            evidence_id: string;
-            /** Title */
-            title: string;
-            /** Source */
-            source: string;
-            /** Url */
-            url?: string | null;
-            /** Supports */
-            supports: string;
-        };
-        /**
-         * TargetCondition
-         * @enum {string}
-         */
-        TargetCondition: "touch" | "close_above" | "close_below";
-        /** ToolObservation */
-        ToolObservation: {
-            /** Id */
-            id?: string;
-            /** Task Id */
-            task_id: string;
-            /** Tool */
-            tool: string;
-            /** Provider */
-            provider: string;
-            /** Status */
-            status: string;
-            /**
-             * Started At
-             * Format: date-time
-             */
-            started_at: string;
-            /**
-             * Completed At
-             * Format: date-time
-             */
-            completed_at: string;
-            /** Duration Ms */
-            duration_ms: number;
-            /**
-             * Cached
-             * @default false
-             */
-            cached: boolean;
-            /**
-             * Retry Count
-             * @default 0
-             */
-            retry_count: number;
-            /** Evidence Ids */
-            evidence_ids?: string[];
-            /** Error */
-            error?: string | null;
-        };
-        /** TraceSpan */
-        TraceSpan: {
-            /** Node */
-            node: string;
-            /**
-             * Started At
-             * Format: date-time
-             */
-            started_at: string;
-            /**
-             * Completed At
-             * Format: date-time
-             */
-            completed_at: string;
-            /** Duration Ms */
-            duration_ms: number;
-            /**
-             * Input Count
-             * @default 0
-             */
-            input_count: number;
-            /**
-             * Output Count
-             * @default 0
-             */
-            output_count: number;
-            /**
-             * Provider
-             * @default deterministic
-             */
-            provider: string;
-            /**
-             * Cached
-             * @default false
-             */
-            cached: boolean;
-            /**
-             * Estimated Cost Usd
-             * @default 0
-             */
-            estimated_cost_usd: number;
+            } | null;
+            /** Limitations */
+            limitations?: string[];
         };
         /** ValidationError */
         ValidationError: {
@@ -1096,64 +1076,6 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
-        /** WorkerRun */
-        WorkerRun: {
-            /** Task Id */
-            task_id: string;
-            /** Worker Type */
-            worker_type: string;
-            /**
-             * Agent Name
-             * @default Legacy worker
-             */
-            agent_name: string;
-            /**
-             * Wave
-             * @default 1
-             */
-            wave: number;
-            /** Objective */
-            objective: string;
-            status: components["schemas"]["WorkerStatus"];
-            /**
-             * Started At
-             * Format: date-time
-             */
-            started_at: string;
-            /**
-             * Completed At
-             * Format: date-time
-             */
-            completed_at: string;
-            /** Duration Ms */
-            duration_ms: number;
-            /**
-             * Tool Calls
-             * @default 0
-             */
-            tool_calls: number;
-            /**
-             * Output Count
-             * @default 0
-             */
-            output_count: number;
-            /** Input Evidence Ids */
-            input_evidence_ids?: string[];
-            /** Output Evidence Ids */
-            output_evidence_ids?: string[];
-            /**
-             * Public Summary
-             * @default
-             */
-            public_summary: string;
-            /** Error */
-            error?: string | null;
-        };
-        /**
-         * WorkerStatus
-         * @enum {string}
-         */
-        WorkerStatus: "queued" | "running" | "completed" | "failed" | "skipped";
     };
     responses: never;
     parameters: never;
@@ -1163,7 +1085,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    healthz_healthz_get: {
+    health_healthz_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1185,20 +1107,14 @@ export interface operations {
             };
         };
     };
-    mcp_adapter_mcp_post: {
+    providers_health_api_v3_providers_health_get: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -1209,6 +1125,30 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    events_api_v3_events_get: {
+        parameters: {
+            query?: {
+                query?: string;
+                source_mode?: "live" | "recorded";
+                include_closed?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventList"];
                 };
             };
             /** @description Validation Error */
@@ -1222,7 +1162,60 @@ export interface operations {
             };
         };
     };
-    create_investigation_api_v1_investigations_post: {
+    event_detail_api_v3_events__event_id__get: {
+        parameters: {
+            query?: {
+                source_mode?: "live" | "recorded";
+            };
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventDefinition"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_cases_api_v3_cases_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchCase"][];
+                };
+            };
+        };
+    };
+    create_case_api_v3_cases_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1231,7 +1224,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["InvestigationCreate"];
+                "application/json": components["schemas"]["CaseCreate"];
             };
         };
         responses: {
@@ -1241,7 +1234,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Investigation"];
+                    "application/json": components["schemas"]["ResearchCase"];
                 };
             };
             /** @description Validation Error */
@@ -1255,12 +1248,12 @@ export interface operations {
             };
         };
     };
-    get_investigation_api_v1_investigations__investigation_id__get: {
+    case_detail_api_v3_cases__case_id__get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                investigation_id: string;
+                case_id: string;
             };
             cookie?: never;
         };
@@ -1272,7 +1265,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Investigation"];
+                    "application/json": components["schemas"]["CaseDetail"];
                 };
             };
             /** @description Validation Error */
@@ -1286,18 +1279,18 @@ export interface operations {
             };
         };
     };
-    patch_investigation_api_v1_investigations__investigation_id__patch: {
+    update_case_api_v3_cases__case_id__patch: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                investigation_id: string;
+                case_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["InvestigationPatch"];
+                "application/json": components["schemas"]["CasePatch"];
             };
         };
         responses: {
@@ -1307,7 +1300,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Investigation"];
+                    "application/json": components["schemas"]["ResearchCase"];
                 };
             };
             /** @description Validation Error */
@@ -1321,12 +1314,45 @@ export interface operations {
             };
         };
     };
-    create_run_api_v1_investigations__investigation_id__runs_post: {
+    revisions_api_v3_cases__case_id__revisions_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                investigation_id: string;
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_run_api_v3_cases__case_id__runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
             };
             cookie?: never;
         };
@@ -1356,7 +1382,7 @@ export interface operations {
             };
         };
     };
-    get_run_api_v1_runs__run_id__get: {
+    run_detail_api_v3_runs__run_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1373,7 +1399,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResearchRun"];
+                    "application/json": components["schemas"]["RunDetail"];
                 };
             };
             /** @description Validation Error */
@@ -1387,71 +1413,7 @@ export interface operations {
             };
         };
     };
-    get_run_trace_api_v1_runs__run_id__trace_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                run_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    cancel_run_api_v1_runs__run_id__cancel_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                run_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResearchRun"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    stream_events_api_v1_runs__run_id__events_get: {
+    run_events_api_v3_runs__run_id__events_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1482,7 +1444,7 @@ export interface operations {
             };
         };
     };
-    fork_run_api_v1_runs__run_id__fork_post: {
+    cancel_run_api_v3_runs__run_id__cancel_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1491,11 +1453,38 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ForkCreate"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchRun"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
+    };
+    resume_run_api_v3_runs__run_id__resume_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             202: {
@@ -1517,12 +1506,14 @@ export interface operations {
             };
         };
     };
-    get_market_api_v1_markets__market_id__get: {
+    export_run_api_v3_runs__run_id__export_get: {
         parameters: {
-            query?: never;
+            query?: {
+                format?: "json" | "markdown";
+            };
             header?: never;
             path: {
-                market_id: string;
+                run_id: string;
             };
             cookie?: never;
         };
@@ -1548,16 +1539,18 @@ export interface operations {
             };
         };
     };
-    get_asset_snapshot_api_v1_assets__symbol__snapshot_get: {
+    simulation_api_v3_simulations_post: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                symbol: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -1565,7 +1558,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["SimulationResult"];
                 };
             };
             /** @description Validation Error */
@@ -1579,7 +1572,71 @@ export interface operations {
             };
         };
     };
-    provider_health_api_v1_providers_health_get: {
+    import_history_api_v3_imports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetSeries"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    observations_api_v3_observations_get: {
+        parameters: {
+            query?: {
+                external_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Observation"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    evaluations_api_v3_evaluations_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1594,9 +1651,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["EvaluationReport"];
                 };
             };
         };

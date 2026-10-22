@@ -1,4 +1,4 @@
 interface:
-  display_name: "Poly Trend Research"
-  short_description: "Verified prediction-market investigations"
-  default_prompt: "Use $polytrend-research to answer this measurable question with stored market evidence and clearly separated proxy context."
+  display_name: "Poly Trend V3 Research"
+  short_description: "Event expectations and asset response evidence"
+  default_prompt: "Use $polytrend-research to inspect exact event contracts and source-linked saved research, keeping hypotheses and empirical validation separate."

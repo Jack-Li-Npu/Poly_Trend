@@ -1,19 +1,16 @@
-name: Poly Trend V2 CI
-
+name: Poly Trend V3 CI
 on:
   push:
-    branches: [main, codex/v2-agent-rebuild]
+    branches: [main, codex/poly-trend-v3]
   pull_request:
-
 permissions:
   contents: read
-
 jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      POLYTREND_LIVE_MARKET_DATA: "false"
+      POLYTREND_LIVE_MARKET_DATA: 'false'
       POLYTREND_SQLITE_PATH: /tmp/polytrend-ci.db
     steps:
       - uses: actions/checkout@v4
@@ -21,15 +18,35 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.12"
-          cache: pip
+          version: '0.9.24'
+          python-version: '3.12'
+      - run: uv sync --project services/research --extra dev --frozen
       - run: npm ci --no-audit --no-fund
-      - run: python -m pip install -e "services/research[test]"
+      - run: uv run --project services/research python scripts/export_contracts.py
+      - run: npm run contracts:generate
+      - run: git diff --exit-code -- packages/contracts
+      - run: uv run --project services/research ruff check --config services/research/pyproject.toml services/research/src/polytrend services/research/tests/v3
+      - run: npm run test
       - run: npm run typecheck
       - run: npm run build
-      - run: python -m pytest services/research/tests
-      - run: python -m pytest evals/retrieval/test_evaluator.py
-      - run: python evals/retrieval/validate_dataset.py
-      - run: python evals/retrieval/evaluate.py
+      - run: uv run --project services/research python -m pytest services/research/tests
+      - run: uv run --project services/research python evals/v3/run.py
+  containers:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      POSTGRES_PASSWORD: polytrend_ci_ephemeral
+      POLYTREND_LIVE_MARKET_DATA: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose up --build -d --wait --wait-timeout 120
+      - run: python3 scripts/container_smoke.py
+      - run: docker compose restart api
+      - run: python3 scripts/container_smoke.py --verify-recovery
+      - if: failure()
+        run: docker compose logs --tail=100
+      - if: always()
+        run: docker compose down -v

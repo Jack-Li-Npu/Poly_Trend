@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@polytrend/contracts": [
+        "../../packages/contracts/src/index.ts"
       ]
     }
   },
